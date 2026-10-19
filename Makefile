@@ -9,7 +9,7 @@ APP_LIVE := warungku-live-app
 URL_DEV  := http://127.0.0.1:8010
 URL_LIVE := http://127.0.0.1:8011
 
-.PHONY: help up down restart logs sh ps fresh seed test queue migrate status open db backup live-up live-down live-logs live-sh live-migrate live-build live-env clean
+.PHONY: help up down restart logs sh ps fresh seed test queue migrate status open db backup live-up live-down live-logs live-sh live-migrate live-build live-env clean restore
 
 help: ## Tampilkan daftar perintah
 	@echo "Warungku — perintah yang tersedia:"
@@ -101,8 +101,20 @@ live-build: ## Rebuild image live setelah ada perubahan kode
 
 backup: ## Dump database dev ke backups/
 	@mkdir -p backups
-	docker exec warungku-dev-mysql mysqldump -uwarungku -psecret --single-transaction warungku_dev > backups/warungku-dev-$$(date +%Y%m%d-%H%M%S).sql
+	@# --no-tablespaces: user aplikasi tidak punya privilege PROCESS, dan
+	@# tanpa flag ini mysqldump mencetak error "Access denied ... PROCESS"
+	@# sambil tetap menulis file yang tampak berhasil.
+	@docker exec warungku-dev-mysql mysqldump -uwarungku -psecret \
+		--single-transaction --no-tablespaces --routines --triggers \
+		warungku_dev 2>/dev/null > backups/warungku-dev-$$(date +%Y%m%d-%H%M%S).sql
 	@ls -lh backups | tail -1
+
+restore: ## Pulihkan database dev dari file backup (FILE=backups/....sql)
+	@test -n "$(FILE)" || (echo "Pakai: make restore FILE=backups/warungku-dev-XXXX.sql"; exit 1)
+	@test -f "$(FILE)" || (echo "File tidak ada: $(FILE)"; exit 1)
+	@read -p "Data dev akan DITIMPA dengan $(FILE). Lanjut? [y/N] " ok; [ "$$ok" = "y" ] || exit 1
+	docker exec -i warungku-dev-mysql mysql -uwarungku -psecret warungku_dev < $(FILE)
+	@echo "Restore selesai."
 
 clean: ## Hapus container + volume dev (DATA DEV HILANG)
 	@read -p "Container dan VOLUME dev akan dihapus. Lanjut? [y/N] " ok; [ "$$ok" = "y" ] || exit 1

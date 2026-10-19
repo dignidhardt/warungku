@@ -5,50 +5,79 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
-    /**
-     * 1. Menampilkan Halaman Login
-     * Menampilkan form bersih tanpa menu app.blade.php
-     */
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
     /**
-     * 2. Memproses Ambil Data dari Form Login
-     * Mengecek username dan password ke tabel users database
+     * Login dengan username ATAU email.
+     *
+     * Skema punya kolom `username` (NOT NULL, unique) dan UI manajemen
+     * karyawan memakai username, jadi login hanya-email akan menutup akses
+     * sebagian akun.
      */
-public function login(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+    public function login(Request $request)
+    {
+        $kredensial = $request->validate([
+            'identifier' => ['required', 'string', 'max:255'],
+            'password' => ['required', 'string'],
+        ]);
 
-    if (Auth::attempt($request->only('email', 'password'))) {
+        $this->cekBatasPercobaan($request);
+
+        $identifier = trim($kredensial['identifier']);
+
+        // Satu input untuk dua kemungkinan kolom.
+        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        if (! Auth::attempt([$field => $identifier, 'password' => $kredensial['password']], $request->boolean('remember'))) {
+            RateLimiter::hit($this->kunciPercobaan($request));
+
+            // Dikirim dengan key `identifier` agar view bisa menampilkannya;
+            // key yang salah membuat pesan error tidak pernah muncul.
+            throw ValidationException::withMessages([
+                'identifier' => 'Username/email atau kata sandi salah.',
+            ]);
+        }
+
+        RateLimiter::clear($this->kunciPercobaan($request));
         $request->session()->regenerate();
-        return redirect()->intended('/home');
+
+        return redirect()->intended(route('home'));
     }
 
-    return back()->withErrors(['email' => 'Email atau Password salah!']);
-}
-
-    /**
-     * 3. Fungsi Keluar (Logout)
-     * Menghapus sesi login dan mengembalikan pengguna ke halaman login
-     */
     public function logout(Request $request)
     {
         Auth::logout();
-        
-        // Bersihkan token keamanan session
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        // Lempar kembali ke halaman depan login
-        return redirect('/login');
+        return redirect()->route('login');
+    }
+
+    private function cekBatasPercobaan(Request $request): void
+    {
+        if (! RateLimiter::tooManyAttempts($this->kunciPercobaan($request), 5)) {
+            return;
+        }
+
+        $detik = RateLimiter::availableIn($this->kunciPercobaan($request));
+
+        throw ValidationException::withMessages([
+            'identifier' => "Terlalu banyak percobaan login. Coba lagi dalam {$detik} detik.",
+        ]);
+    }
+
+    private function kunciPercobaan(Request $request): string
+    {
+        return Str::transliterate(Str::lower($request->input('identifier')).'|'.$request->ip());
     }
 }

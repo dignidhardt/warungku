@@ -1,0 +1,29 @@
+# Konteks build image Warungku.
+# Tanpa ini, `COPY . .` ikut membawa vendor/ dan node_modules/ dari host —
+# vendor hasil build di satu mesin bisa tidak cocok dengan PHP di container.
+.git
+.gitignore
+.idea
+.vscode
+.zed
+.env
+.env.*
+!.env.example
+.env.live
+vendor
+node_modules
+public/build
+public/hot
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/testing/*
+database/*.sqlite
+backups
+*.md
+!README.md
+Dockerfile
+compose*.yaml
+Makefile
+docker-compose*.yml

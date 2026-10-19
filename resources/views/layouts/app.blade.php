@@ -1,167 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOTOCOPY ADEEXPRESS</title>
-
-<style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, Helvetica, sans-serif;
-}
-
-body{
-    background:#f4f6f9;
-}
-
-/* Navbar */
-.navbar{
-    width:100%;
-    height:60px;
-    background:#0d6efd;
-    color:white;
-    display:flex;
-    align-items:center;
-    justify-content:between; /* Mengatur ruang kiri dan kanan */
-    padding:0 20px;
-}
-
-.nav-left {
-    display: flex;
-    align-items: center;
-}
-
-.nav-right {
-    margin-left: auto; /* Memaksa nama admin bergeser ke kanan */
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-/* Tombol hamburger */
-.menu-btn{
-    font-size:28px;
-    cursor:pointer;
-    margin-right:20px;
-}
-
-/* Layout */
-.container{
-    display:flex;
-}
-
-/* Sidebar */
-.sidebar{
-    width:200px;
-    background:#1e293b;
-    color:white;
-    min-height:100vh;
-    transition:0.3s;
-    overflow:hidden;
-}
-
-/* Sidebar tertutup */
-.sidebar.hide{
-    width:0;
-}
-
-/* Judul */
-.sidebar h2{
-    text-align:center;
-    padding:20px 0;
-}
-
-/* Menu */
-.sidebar a, .sidebar button{
-    display:block;
-    width: 100%;
-    color:white;
-    text-decoration:none;
-    padding:15px 20px;
-    text-align: left;
-    background: none;
-    border: none;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.sidebar a:hover, .sidebar button:hover{
-    background:#334155;
-}
-
-/* Isi */
-.content{
-    flex:1;
-    padding:30px;
-    transition:0.3s;
-}
-
-.card{
-    background:white;
-    padding:25px;
-    border-radius:10px;
-    box-shadow:0 0 10px rgba(0,0,0,.1);
-}
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('judul', 'Beranda') — {{ config('warungku.nama_toko') }}</title>
+    <link rel="stylesheet" href="{{ asset('css/warungku.css') }}">
+    @stack('gaya')
 </head>
 <body>
 
-<div class="navbar">
-    <div class="nav-left">
-        <span class="menu-btn" onclick="toggleSidebar()">☰</span>
-        <h2>FOTOCOPY ADEEXPRESS</h2>
-    </div>
+<header class="navbar">
+    <button type="button" class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('tutup')" aria-label="Buka/tutup menu">☰</button>
+    <h1>{{ config('warungku.nama_toko') }}</h1>
 
-    <div class="nav-right">
+    <div class="nav-kanan">
         @auth
-            <span style="font-weight: bold;">{{ Auth::user()->name }}</span>
+            <span>{{ auth()->user()->name }}</span>
+            <span class="lencana {{ auth()->user()->isAdmin() ? 'biru' : 'abu' }}">{{ auth()->user()->role }}</span>
         @endauth
     </div>
-</div>
+</header>
 
-<div class="container">
+<div class="kerangka">
+    <nav class="sidebar" id="sidebar">
+        @php
+            $menu = [
+                ['route' => 'home', 'label' => 'Beranda'],
+                ['route' => 'transaksi.index', 'label' => 'Kasir'],
+                ['route' => 'transaksi.riwayat', 'label' => 'Riwayat Transaksi'],
+                ['route' => 'stok.index', 'label' => 'Produk & Stok'],
+                ['route' => 'laporan.index', 'label' => 'Laporan'],
+            ];
+        @endphp
 
-    <div class="sidebar" id="sidebar">
+        @foreach ($menu as $item)
+            <a href="{{ route($item['route']) }}"
+               class="{{ request()->routeIs($item['route']) ? 'aktif' : '' }}">
+                {{ $item['label'] }}
+            </a>
+        @endforeach
 
-        <h2>Menu</h2>
-
-        <a href="{{ route('home') }}">Home</a>
-        <hr style="border-color: #334155;"></hr>
-        
-        <a href="{{ route('stok.index') }}">Stok</a>
-        <hr style="border-color: #334155;"></hr>
-        
-        <a href="{{ route('transaksi.index') }}">Transaksi</a>
-        <hr style="border-color: #334155;"></hr>
-        
-        <a href="{{ route('laporan.index') }}">Laporan</a>
-        <hr style="border-color: #334155;"></hr>
-
-        @if(Auth::user() && Auth::user()->role === 'admin')
-            <a href="{{ route('users.index') }}">Manajemen Karyawan</a>
-            <hr style="border-color: #334155;"></hr>
+        @if (auth()->user()->isAdmin())
+            <div class="pemisah"></div>
+            <div class="label">Administrasi</div>
+            <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'aktif' : '' }}">Manajemen Karyawan</a>
         @endif
-        
-        <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+
+        <div class="pemisah"></div>
+
+        <form action="{{ route('logout') }}" method="POST">
             @csrf
-            <button type="submit" style="color: #ef4444; font-weight: bold;"> Keluar</button>
+            <button type="submit" class="keluar">Keluar</button>
         </form>
+    </nav>
 
-    </div>
+    <main class="isi">
+        {{-- Notifikasi global: sukses, error, dan kesalahan validasi ringkas. --}}
+        @if (session('success'))
+            <div class="pesan sukses">{{ session('success') }}</div>
+        @endif
 
-    @yield('content')
+        @if (session('error'))
+            <div class="pesan galat">{{ session('error') }}</div>
+        @endif
 
+        @if (session('info'))
+            <div class="pesan info">{{ session('info') }}</div>
+        @endif
+
+        @if ($errors->any())
+            <div class="pesan galat">
+                <strong>Periksa kembali isian berikut:</strong>
+                <ul style="margin:8px 0 0 18px;">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @yield('konten')
+    </main>
 </div>
 
-<script>
-function toggleSidebar(){
-    document.getElementById("sidebar").classList.toggle("hide");
-}
-</script>
-
+@stack('skrip')
 </body>
 </html>

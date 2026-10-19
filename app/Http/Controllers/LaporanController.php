@@ -2,69 +2,86 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Transaksi;
 use App\Exports\LaporanExport;
+use App\Services\LaporanService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
-use Carbon\Carbon;
 
 class LaporanController extends Controller
 {
-    // Menampilkan halaman laporan
-    public function index(Request $request)
+    public function index(Request $request, LaporanService $laporan)
     {
-        $bulanSelected = $request->bulan ?? date('m');
-        $tahunSelected = $request->tahun ?? date('Y');
+        [$bulan, $tahun] = $this->periode($request);
 
-        // Ambil daftar tahun dari database
-        $daftarTahun = Transaksi::selectRaw('YEAR(created_at) as year')
-            ->distinct()
-            ->orderBy('year', 'DESC')
-            ->pluck('year');
+        $transaksi = $laporan->transaksiPeriode($bulan, $tahun);
 
-        // Jika database kosong
-        if ($daftarTahun->isEmpty()) {
-            $daftarTahun = collect([date('Y')]);
-        }
-
-        // Jika user memilih filter bulan & tahun
-        if ($request->filled('bulan') && $request->filled('tahun')) {
-
-            $laporan = Transaksi::whereMonth('created_at', $bulanSelected)
-                ->whereYear('created_at', $tahunSelected)
-                ->latest()
-                ->get();
-
-        } else {
-
-            // Default: hanya transaksi hari ini
-            $laporan = Transaksi::whereDate('created_at', Carbon::today())
-                ->latest()
-                ->get();
-        }
-
-        // Total pendapatan hari ini
-        $totalHariIni = Transaksi::whereDate('created_at', Carbon::today())
-            ->sum('grand_total');
-
-        return view('layouts.laporan', compact(
-            'laporan',
-            'totalHariIni',
-            'bulanSelected',
-            'tahunSelected',
-            'daftarTahun'
-        ));
+        return view('laporan.index', [
+            'transaksi' => $transaksi,
+            'ringkasan' => $laporan->ringkasan($transaksi),
+            'hariIni' => $laporan->ringkasan($laporan->transaksiHariIni()),
+            'produkTerlaris' => $laporan->produkTerlaris($transaksi),
+            'bulanSelected' => $bulan,
+            'tahunSelected' => $tahun,
+            'daftarTahun' => $laporan->daftarTahun(),
+            'namaBulan' => $this->namaBulan(),
+        ]);
     }
 
-    // Export Excel
     public function exportExcel(Request $request)
     {
-        $bulan = $request->bulan ?? date('m');
-        $tahun = $request->tahun ?? date('Y');
+        [$bulan, $tahun] = $this->periode($request);
 
         return Excel::download(
             new LaporanExport($bulan, $tahun),
-            'laporan_transaksi.xlsx'
+            "laporan-{$tahun}-{$bulan}.xlsx"
         );
+    }
+
+    public function exportPdf(Request $request, LaporanService $laporan)
+    {
+        [$bulan, $tahun] = $this->periode($request);
+
+        $transaksi = $laporan->transaksiPeriode($bulan, $tahun);
+
+        $pdf = Pdf::loadView('laporan.pdf', [
+            'transaksi' => $transaksi,
+            'ringkasan' => $laporan->ringkasan($transaksi),
+            'produkTerlaris' => $laporan->produkTerlaris($transaksi),
+            'bulan' => $this->namaBulan()[$bulan] ?? $bulan,
+            'tahun' => $tahun,
+            'namaToko' => config('warungku.nama_toko'),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download("laporan-{$tahun}-{$bulan}.pdf");
+    }
+
+    /**
+     * Periode dari query string; default bulan & tahun berjalan.
+     *
+     * @return array{0:int, 1:int}
+     */
+    private function periode(Request $request): array
+    {
+        $bulan = (int) $request->input('bulan', date('n'));
+        $tahun = (int) $request->input('tahun', date('Y'));
+
+        // Jaga-jaga terhadap input di luar rentang (mis. ?bulan=99).
+        $bulan = ($bulan >= 1 && $bulan <= 12) ? $bulan : (int) date('n');
+        $tahun = ($tahun >= 2000 && $tahun <= 2999) ? $tahun : (int) date('Y');
+
+        return [$bulan, $tahun];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function namaBulan(): array
+    {
+        return [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
     }
 }

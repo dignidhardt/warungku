@@ -2,29 +2,31 @@
 
 namespace App\Exports;
 
-use App\Models\Transaksi;
+use App\Services\LaporanService;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class LaporanExport implements FromView
+class LaporanExport implements FromView, ShouldAutoSize
 {
-    protected $bulan;
-    protected $tahun;
-
-    public function __construct($bulan, $tahun)
-    {
-        $this->bulan = (int) $bulan;
-        $this->tahun = (int) $tahun;
-    }
+    public function __construct(
+        private readonly int $bulan,
+        private readonly int $tahun
+    ) {}
 
     public function view(): View
     {
-        $query = Transaksi::whereMonth('created_at', $this->bulan)
-            ->whereYear('created_at', $this->tahun);
+        // Dihitung lewat service yang sama dengan halaman laporan, supaya
+        // angka di Excel tidak mungkin berbeda dari yang tampil di layar.
+        $laporan = app(LaporanService::class);
+        $transaksi = $laporan->transaksiPeriode($this->bulan, $this->tahun);
 
-        return view('ekports', [
-            'laporan' => $query->get(),
-            'total'   => $query->sum('grand_total')
+        return view('laporan.excel', [
+            'transaksi' => $transaksi,
+            'ringkasan' => $laporan->ringkasan($transaksi),
+            'bulan' => $this->bulan,
+            'tahun' => $this->tahun,
+            'namaToko' => config('warungku.nama_toko'),
         ]);
     }
 }

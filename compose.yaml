@@ -1,0 +1,76 @@
+# Stack DEVELOPMENT Warungku.
+#   docker compose up -d
+#   -> aplikasi http://127.0.0.1:8010, MySQL di 127.0.0.1:3309
+#
+# Nilai di sini sengaja DITULIS LANGSUNG, bukan ${VAR}: file `.env` di root
+# dipakai Laravel untuk jalan native dan berisi DB_PORT=3306, sehingga
+# interpolasi compose akan ikut membajak port dan bentrok dengan project lain.
+# Kredensial dev bukan rahasia; jangan pakai untuk live (lihat compose.live.yaml).
+#
+# Data dev terpisah total dari live: nama project, volume, database, dan port
+# berbeda. Tidak ada cara satu stack menyentuh data stack lain.
+name: warungku-dev
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: warungku-dev-mysql
+    restart: unless-stopped
+    command: --mysql-native-password=ON
+    environment:
+      MYSQL_ROOT_PASSWORD: rootsecret
+      MYSQL_DATABASE: warungku_dev
+      MYSQL_USER: warungku
+      MYSQL_PASSWORD: secret
+    ports:
+      - "127.0.0.1:3309:3306"
+    volumes:
+      - warungku-dev-mysql-data:/var/lib/mysql
+      # Init script hanya jalan saat volume masih kosong. Gunanya membuat
+      # database warungku_test + grant-nya supaya `make test` langsung jalan
+      # tanpa langkah manual.
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootsecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Dev memakai stage `base` saja: kode di-mount dari host, jadi menyalin
+      # kode & composer install ke image hanya membuang waktu build.
+      target: base
+    container_name: warungku-dev-app
+    working_dir: /var/www/html
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      # Kode di host, eksekusi di container: edit file langsung terlihat,
+      # tidak perlu rebuild kecuali Dockerfile berubah.
+      - .:/var/www/html
+      # .env.docker dipasang sebagai .env Laravel -> satu sumber kebenaran,
+      # tidak ada dua file env yang bisa berbeda isi.
+      - ./.env.docker:/var/www/html/.env:ro
+    ports:
+      - "127.0.0.1:8010:8000"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_DATABASE: warungku_dev
+      DB_USERNAME: warungku
+      DB_PASSWORD: secret
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+      # Dev otomatis migrate supaya `up` sekali perintah langsung bisa dipakai.
+      AUTO_MIGRATE: "true"
+
+volumes:
+  warungku-dev-mysql-data:

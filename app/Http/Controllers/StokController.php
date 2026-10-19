@@ -2,92 +2,174 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Stok;
+use App\Services\TransaksiService;
 use Illuminate\Http\Request;
-use App\Models\Stok; // Pastikan model Stok di-import dengan benar
+use Illuminate\Validation\Rule;
+use RuntimeException;
 
 class StokController extends Controller
 {
-    // 1. Menampilkan halaman utama daftar stok (URUTAN DARI STOK TERSEDIKIT + PENCARIAN)
     public function index(Request $request)
     {
-        // Ambil data kata kunci 'cari' dari form input
-        $keyword = $request->get('cari');
+        $keyword = trim((string) $request->get('cari', ''));
 
-        // Buat query dasar dari model Stok
-        $query = Stok::query();
+        $produk = Stok::query()
+            ->when($keyword !== '', function ($query) use ($keyword) {
+                // Dikelompokkan dalam satu closure: tanpa itu, orWhere milik
+                // LIKE bisa lolos dari filter lain yang ditambahkan nanti.
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('nama_produk', 'like', "%{$keyword}%")
+                        ->orWhere('barcode', 'like', "%{$keyword}%")
+                        ->orWhere('kategori', 'like', "%{$keyword}%");
+                });
+            })
+            ->when($request->get('status') === 'menipis', fn ($q) => $q->whereColumn('stok', '<=', 'stok_minimal')->where('stok', '>', 0))
+            ->when($request->get('status') === 'habis', fn ($q) => $q->where('stok', '<=', 0))
+            ->orderBy('stok')
+            ->orderBy('nama_produk')
+            ->paginate(20)
+            ->withQueryString();
 
-        // Jika user mengetik sesuatu di kolom pencarian, saring datanya
-        if (!empty($keyword)) {
-            $query->where('nama_produk', 'LIKE', "%{$keyword}%")
-                  ->orWhere('barcode', 'LIKE', "%{$keyword}%")
-                  ->orWhere('kategori', 'LIKE', "%{$keyword}%");
-        }
-
-        // BERHASIL DIUBAH: Diurutkan dari jumlah stok terkecil (0, 1, 2...) ke terbesar
-        $stok = $query->orderBy('stok', 'asc')->get(); 
-        
-        // Mengarah ke resources/views/layouts/stok.blade.php
-        return view('layouts.stok', compact('stok')); 
+        return view('stok.index', [
+            'produk' => $produk,
+            'keyword' => $keyword,
+            'status' => $request->get('status'),
+            'totalHabis' => Stok::where('stok', '<=', 0)->count(),
+            'totalMenipis' => Stok::whereColumn('stok', '<=', 'stok_minimal')->where('stok', '>', 0)->count(),
+        ]);
     }
 
-    // 2. Menampilkan halaman form tambah produk
+    public function show(Stok $stok)
+    {
+        return view('stok.show', [
+            'produk' => $stok,
+            'mutasis' => $stok->mutasis()->with('user')->latest()->paginate(25),
+        ]);
+    }
+
     public function create()
     {
-        return view('layouts.create'); 
+        return view('stok.create', ['produk' => new Stok(['stok_minimal' => 5])]);
     }
 
-    // 3. Memproses penyimpanan data dari form input baru
-    public function store(Request $request)
+    public function store(Request $request, TransaksiService $service)
     {
-        $request->validate([
-            'barcode' => 'required',
-            'nama_produk' => 'required',
-            'kategori' => 'required',
-            'harga_beli' => 'required|numeric',
-            'harga_jual' => 'required|numeric',
-            'stok' => 'required|integer',
+        $data = $this->validasi($request);
+
+        // Produk dibuat dengan stok 0, lalu stok awal dicatat sebagai mutasi.
+        // `array_merge` dipakai (bukan `+`) karena operator `+` TIDAK menimpa
+        // key yang sudah ada — `$data` sudah berisi 'stok' dari validasi, jadi
+        // `$data + ['stok' => 0]` akan tetap memakai angka dari form dan
+        // mutasi "stok awal" menghitung tambahan di atas angka itu (stok jadi
+        // dobel).
+        $produk = Stok::create(array_merge($data, ['stok' => 0]));
+
+        // Stok awal dicatat sebagai mutasi, bukan langsung menimpa kolom,
+        // supaya riwayat "kenapa stoknya segini" tetap ada.
+        if ((int) $request->input('stok', 0) > 0) {
+            $service->tambahStok($produk, (int) $request->input('stok'), 'Stok awal produk', $request->user());
+        }
+
+        return redirect()
+            ->route('stok.index')
+            ->with('success', "Produk '{$produk->nama_produk}' berhasil ditambahkan.");
+    }
+
+    public function edit(Stok $stok)
+    {
+        return view('stok.edit', ['produk' => $stok]);
+    }
+
+    public function update(Request $request, Stok $stok)
+    {
+        $data = $this->validasi($request, $stok->id);
+
+        // Kolom `stok` sengaja TIDAK ikut di-update di sini: perubahan stok
+        // harus lewat penyesuaian agar tercatat di riwayat mutasi.
+        unset($data['stok']);
+
+        $stok->update($data);
+
+        return redirect()
+            ->route('stok.index')
+            ->with('success', "Produk '{$stok->nama_produk}' berhasil diperbarui.");
+    }
+
+    public function destroy(Stok $stok)
+    {
+        $nama = $stok->nama_produk;
+        $stok->delete();
+
+        return redirect()
+            ->route('stok.index')
+            ->with('success', "Produk '{$nama}' berhasil dihapus.");
+    }
+
+    /**
+     * Stok opname: menetapkan jumlah akhir beserta alasannya.
+     */
+    public function sesuaikan(Request $request, Stok $stok, TransaksiService $service)
+    {
+        $data = $request->validate([
+            'stok_baru' => ['required', 'integer', 'min:0'],
+            'keterangan' => ['required', 'string', 'max:255'],
         ]);
 
-        Stok::create($request->all());
+        try {
+            $service->sesuaikanStok($stok, (int) $data['stok_baru'], $data['keterangan'], $request->user());
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
-        return redirect()->route('stok.index')->with('success', 'Produk berhasil ditambahkan!');
+        return back()->with('success', "Stok '{$stok->nama_produk}' disesuaikan menjadi {$data['stok_baru']}.");
     }
 
-    // 5. MEMPROSES UPDATE DATA PRODUK
-    public function update(Request $request, $id)
+    /**
+     * Barang datang: menambah stok tanpa mengubah harga.
+     */
+    public function tambah(Request $request, Stok $stok, TransaksiService $service)
     {
-        $request->validate([
-            'barcode' => 'required',
-            'nama_produk' => 'required',
-            'kategori' => 'required',
-            'harga_beli' => 'required|numeric',
-            'harga_jual' => 'required|numeric',
-            'stok' => 'required|integer',
+        $data = $request->validate([
+            'jumlah' => ['required', 'integer', 'min:1'],
+            'keterangan' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $stok = Stok::findOrFail($id);
-        $stok->update($request->all());
+        try {
+            $service->tambahStok(
+                $stok,
+                (int) $data['jumlah'],
+                $data['keterangan'] ?: 'Penambahan stok',
+                $request->user()
+            );
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
-        return redirect()->route('stok.index')->with('success', 'Produk berhasil diperbarui!');
+        return back()->with('success', "Stok '{$stok->nama_produk}' ditambah {$data['jumlah']}.");
     }
 
-    // 6. MEMPROSES PENGHAPUSAN DATA
-    public function destroy($id)
+    /**
+     * @return array<string, mixed>
+     */
+    private function validasi(Request $request, ?int $idProduk = null): array
     {
-        // Mencari data berdasarkan ID, jika tidak ada langsung memicu error 404
-        $stok = Stok::findOrFail($id); 
-        
-        // Menghapus data dari database
-        $stok->delete(); 
-
-        // Mengembalikan tampilan ke halaman utama dengan pesan sukses
-        return redirect()->route('stok.index')->with('success', 'Produk berhasil dihapus!');
+        return $request->validate([
+            'barcode' => [
+                'required', 'string', 'max:64',
+                // Barcode unik: dua produk berkode sama membuat pemindaian di
+                // kasir memilih barang yang salah.
+                Rule::unique('stok', 'barcode')->ignore($idProduk),
+            ],
+            'nama_produk' => ['required', 'string', 'max:255'],
+            'kategori' => ['required', 'string', 'max:100'],
+            'harga_beli' => ['required', 'integer', 'min:0'],
+            'harga_jual' => ['required', 'integer', 'min:0', 'gte:harga_beli'],
+            'stok' => ['nullable', 'integer', 'min:0'],
+            'stok_minimal' => ['nullable', 'integer', 'min:0'],
+        ], [
+            'harga_jual.gte' => 'Harga jual tidak boleh lebih rendah dari harga beli.',
+            'barcode.unique' => 'Barcode ini sudah dipakai produk lain.',
+        ]);
     }
-
-public function edit($id)
-{
-    $stok = Stok::findOrFail($id);
-
-    return view('layouts.edit', compact('stok'));
-}
 }

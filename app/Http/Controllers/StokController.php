@@ -50,7 +50,10 @@ class StokController extends Controller
 
     public function create()
     {
-        return view('stok.create', ['produk' => new Stok(['stok_minimal' => 5])]);
+        return view('stok.create', [
+            'produk' => new Stok(['stok_minimal' => 5, 'satuan' => 'pcs']),
+            'daftarSatuan' => Stok::SATUAN_PILIHAN,
+        ]);
     }
 
     public function store(Request $request, TransaksiService $service)
@@ -78,7 +81,10 @@ class StokController extends Controller
 
     public function edit(Stok $stok)
     {
-        return view('stok.edit', ['produk' => $stok]);
+        return view('stok.edit', [
+            'produk' => $stok,
+            'daftarSatuan' => Stok::SATUAN_PILIHAN,
+        ]);
     }
 
     public function update(Request $request, Stok $stok)
@@ -127,18 +133,25 @@ class StokController extends Controller
 
     /**
      * Barang datang: menambah stok tanpa mengubah harga.
+     *
+     * `satuan` opsional: kalau produk punya kemasan (mis. karung 25 kg), kasir
+     * boleh memasukkan "2" dengan satuan "karung" dan sistem mengubahnya jadi 50 kg.
      */
     public function tambah(Request $request, Stok $stok, TransaksiService $service)
     {
         $data = $request->validate([
             'jumlah' => ['required', 'integer', 'min:1'],
+            'satuan' => ['nullable', 'string', 'max:20'],
             'keterangan' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // Konversi dari satuan kemasan ke satuan dasar sebelum disimpan.
+        $jumlah = $stok->keSatuanDasar((int) $data['jumlah'], $data['satuan'] ?? null);
 
         try {
             $service->tambahStok(
                 $stok,
-                (int) $data['jumlah'],
+                $jumlah,
                 $data['keterangan'] ?: 'Penambahan stok',
                 $request->user()
             );
@@ -146,7 +159,7 @@ class StokController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', "Stok '{$stok->nama_produk}' ditambah {$data['jumlah']}.");
+        return back()->with('success', "Stok '{$stok->nama_produk}' ditambah ".$stok->labelStok($jumlah).'.');
     }
 
     /**
@@ -162,6 +175,9 @@ class StokController extends Controller
                 Rule::unique('stok', 'barcode')->ignore($idProduk),
             ],
             'nama_produk' => ['required', 'string', 'max:255'],
+            'satuan' => ['required', 'string', 'max:20'],
+            'satuan_kemasan' => ['nullable', 'string', 'max:20', 'required_with:isi_kemasan'],
+            'isi_kemasan' => ['nullable', 'integer', 'min:1', 'required_with:satuan_kemasan'],
             'kategori' => ['required', 'string', 'max:100'],
             'harga_beli' => ['required', 'integer', 'min:0'],
             'harga_jual' => ['required', 'integer', 'min:0', 'gte:harga_beli'],
@@ -170,6 +186,9 @@ class StokController extends Controller
         ], [
             'harga_jual.gte' => 'Harga jual tidak boleh lebih rendah dari harga beli.',
             'barcode.unique' => 'Barcode ini sudah dipakai produk lain.',
+            'satuan.required' => 'Satuan wajib diisi (pcs, kg, liter, dll).',
+            'satuan_kemasan.required_with' => 'Isi kemasan wajib diisi kalau nama kemasan diisi.',
+            'isi_kemasan.required_with' => 'Nama kemasan wajib diisi kalau isi kemasan diisi.',
         ]);
     }
 }

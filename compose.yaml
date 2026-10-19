@@ -74,5 +74,30 @@ services:
       AUTO_MIGRATE: "true"
       AUTO_SEED: "true"
 
+  # Backup otomatis. Cron di dalam container app, bukan di host, supaya
+  # backup tetap jalan walau tidak ada terminal yang terbuka.
+  #
+  # Pakai image yang sama dengan app (ada mysqldump-nya) tapi tanpa mount
+  # kode, supaya tidak menimpa file sumber. Yang dip-mount hanya folder
+  # backup dan konfigurasi cron.
+  backup:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backup
+    container_name: warungku-dev-backup
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - warungku-dev-backups:/var/www/html/backups
+    environment:
+      DB_HOST: mysql
+      DB_DATABASE: warungku_dev
+      MYSQL_USER: warungku
+      MYSQL_PASSWORD: secret
+      RETENSI_HARI: "14"
+
 volumes:
   warungku-dev-mysql-data:
+  warungku-dev-backups:

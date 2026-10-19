@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1
+
+# ---------------------------------------------------------------------------
+# Image untuk backup terjadwal.
+#
+# SENGAJA tidak dibangun dari `base` (image PHP). Image resmi `mysql:8.4`
+# sudah membawa `mysqldump` dari Oracle yang cocok dengan server MySQL 8.4.
+#
+# Dua jalan yang sempat dipakai dan kenapa ditolak:
+#
+# 1. `default-mysql-client` dari Debian = MariaDB client 10.19.
+#    Tidak mengenal `--ssl-mode` dan gagal handshake dengan MySQL 8.4
+#    ("TLS/SSL error: self-signed certificate in certificate chain").
+#
+# 2. Repo resmi MySQL (repo.mysql.com) memakai GPG key yang sudah expired
+#    per 2025-10-22, jadi `apt-get update` dari sana gagal dengan
+#    "The primary key is not live". Tidak ada jalan bersih memakainya
+#    tanpa menonaktifkan verifikasi tanda tangan.
+#
+# CATATAN: image `mysql:8.4` berbasis Oracle Linux (bukan Debian), jadi
+# paket dipasang pakai `microdnf`, bukan `apt-get`, dan daemon cron-nya
+# bernama `crond`.
+# ---------------------------------------------------------------------------
+FROM mysql:8.4
+
+RUN microdnf install -y cronie \
+    && microdnf clean all
+
+COPY docker/backup.sh /usr/local/bin/backup.sh
+# Cron di Oracle Linux (cronie) membaca /etc/cron.d, bukan /etc/crontabs/.
+# Di /etc/cron.d setiap baris wajib menyebut user sebelum perintah.
+COPY docker/cron.d-warungku-backup /etc/cron.d/warungku-backup
+RUN chmod +x /usr/local/bin/backup.sh && chmod 0644 /etc/cron.d/warungku-backup
+
+# Cron harus jalan di foreground, kalau tidak container langsung berhenti.
+#
+# Flag yang dipakai: -n (foreground). Opsi -f dan -l milik Debian dan tidak
+# ada di crond Oracle Linux — memakainya membuat container langsung crash
+# dengan "Unknown option" lalu restart terus-menerus.
+ENTRYPOINT ["/usr/sbin/crond", "-n"]

@@ -130,7 +130,7 @@
             </tr>
             <tr>
                 <td>
-                    {{ (int) ($item['qty'] ?? 0) }} x
+                    {{ (int) ($item['qty'] ?? 0) }} {{ $item['satuan'] ?? 'pcs' }} x
                     Rp {{ number_format((int) ($item['harga'] ?? 0), 0, ',', '.') }}
                 </td>
                 <td class="kanan">
@@ -147,14 +147,22 @@
             <td>TOTAL</td>
             <td class="kanan">Rp {{ number_format($transaksi->grand_total, 0, ',', '.') }}</td>
         </tr>
+        @if ($transaksi->diskon > 0)
+            <tr>
+                <td>Diskon</td>
+                <td class="kanan">− Rp {{ number_format($transaksi->diskon, 0, ',', '.') }}</td>
+            </tr>
+        @endif
         <tr>
-            <td>Bayar</td>
+            <td>Bayar ({{ $transaksi->label_metode }})</td>
             <td class="kanan">Rp {{ number_format($transaksi->bayar, 0, ',', '.') }}</td>
         </tr>
-        <tr class="kembali">
-            <td>Kembali</td>
-            <td class="kanan">Rp {{ number_format($transaksi->kembali, 0, ',', '.') }}</td>
-        </tr>
+        @if ($transaksi->metode_bayar === 'tunai')
+            <tr class="kembali">
+                <td>Kembali</td>
+                <td class="kanan">Rp {{ number_format($transaksi->kembali, 0, ',', '.') }}</td>
+            </tr>
+        @endif
     </table>
 
     <hr>

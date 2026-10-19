@@ -23,20 +23,30 @@ class TransaksiService
     /**
      * Simpan penjualan: validasi stok, potong stok, catat mutasi, buat nota.
      *
-     * @param  array<int, array{id:int|string, qty:int, harga?:int}>  $items
+     * @param  array<int, array{id:int|string, qty:int}>  $items
+     * @param  int  $diskon  potongan dalam rupiah (bukan persen)
      *
      * @throws RuntimeException saat stok tidak cukup atau data tidak valid
      */
-    public function simpanPenjualan(array $items, int $bayar, ?User $kasir = null): Transaksi
-    {
+    public function simpanPenjualan(
+        array $items,
+        int $bayar,
+        ?User $kasir = null,
+        int $diskon = 0,
+        string $metodeBayar = Transaksi::METODE_TUNAI
+    ): Transaksi {
         if ($items === []) {
             throw new RuntimeException('Keranjang masih kosong.');
         }
 
+        if ($diskon < 0) {
+            throw new RuntimeException('Diskon tidak boleh negatif.');
+        }
+
         $items = $this->gabungkanItemSama($items);
 
-        return DB::transaction(function () use ($items, $bayar, $kasir) {
-            $total = 0;
+        return DB::transaction(function () use ($items, $bayar, $kasir, $diskon, $metodeBayar) {
+            $subtotalBelanja = 0;
             $rincian = [];
             $produkTerkunci = [];
 
@@ -61,26 +71,41 @@ class TransaksiService
 
                 if ($produk->stok < $qty) {
                     throw new RuntimeException(
-                        "Stok '{$produk->nama_produk}' tidak mencukupi. Sisa: {$produk->stok} pcs."
+                        "Stok '{$produk->nama_produk}' tidak mencukupi. "
+                        .'Sisa: '.$produk->labelStok($produk->stok).'.'
                     );
                 }
 
                 // Harga diambil dari database, bukan dari kiriman browser, agar
                 // harga tidak bisa diubah lewat request.
                 $subtotal = $produk->harga_jual * $qty;
-                $total += $subtotal;
+                $subtotalBelanja += $subtotal;
 
                 $rincian[] = [
                     'id' => $produk->id,
                     'nama' => $produk->nama_produk,
                     'barcode' => $produk->barcode,
+                    'satuan' => $produk->satuan,
                     'harga' => $produk->harga_jual,
+                    // Harga beli disimpan per nota supaya laba historis tidak
+                    // berubah ketika harga beli produk diperbarui nanti.
                     'harga_beli' => $produk->harga_beli,
                     'qty' => $qty,
                     'subtotal' => $subtotal,
                 ];
 
                 $produkTerkunci[] = [$produk, $qty];
+            }
+
+            // Diskon tidak boleh melebihi nilai belanja, kalau tidak grand_total
+            // jadi negatif dan laporan omzet rusak.
+            $diskon = min($diskon, $subtotalBelanja);
+            $total = $subtotalBelanja - $diskon;
+
+            // Untuk non-tunai, uang yang diserahkan dianggap pas: tidak ada
+            // kembalian karena pembayaran lewat QRIS/transfer/debit.
+            if ($metodeBayar !== Transaksi::METODE_TUNAI) {
+                $bayar = $total;
             }
 
             if ($bayar < $total) {
@@ -91,9 +116,11 @@ class TransaksiService
                 'user_id' => $kasir?->id,
                 'nomor_transaksi' => $this->nomorBaru(),
                 'detail_produk' => $rincian,
+                'diskon' => $diskon,
                 'grand_total' => $total,
                 'bayar' => $bayar,
                 'kembali' => $bayar - $total,
+                'metode_bayar' => $metodeBayar,
             ]);
 
             foreach ($produkTerkunci as [$produk, $qty]) {

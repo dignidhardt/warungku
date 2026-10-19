@@ -43,3 +43,6 @@ Thumbs.db
 npm-debug.log
 yarn-error.log
 /auth.json
+
+# Dokumen perancangan (referensi, tidak ikut di-commit)
+/PERANCANGAN*.docx

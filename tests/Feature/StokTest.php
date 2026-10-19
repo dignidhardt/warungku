@@ -22,6 +22,7 @@ class StokTest extends TestCase
         return Stok::create(array_merge([
             'barcode' => 'BRG-001',
             'nama_produk' => 'Kopi Sachet',
+            'satuan' => 'pcs',
             'kategori' => 'Minuman',
             'harga_beli' => 2000,
             'harga_jual' => 3000,
@@ -48,6 +49,7 @@ class StokTest extends TestCase
         $this->actingAs($admin)->post(route('stok.store'), [
             'barcode' => 'BRG-999',
             'nama_produk' => 'Teh Botol',
+            'satuan' => 'pcs',
             'kategori' => 'Minuman',
             'harga_beli' => 3000,
             'harga_jual' => 5000,
@@ -74,6 +76,7 @@ class StokTest extends TestCase
 
         $this->actingAs($this->admin())->post(route('stok.store'), [
             'barcode' => 'SAMA-1',
+            'satuan' => 'pcs',
             'nama_produk' => 'Produk Lain',
             'kategori' => 'Snack',
             'harga_beli' => 1000,
@@ -86,6 +89,7 @@ class StokTest extends TestCase
     {
         $this->actingAs($this->admin())->post(route('stok.store'), [
             'barcode' => 'BRG-002',
+            'satuan' => 'pcs',
             'nama_produk' => 'Rugi',
             'kategori' => 'Snack',
             'harga_beli' => 5000,
@@ -100,6 +104,7 @@ class StokTest extends TestCase
 
         $this->actingAs($kasir)->post(route('stok.store'), [
             'barcode' => 'BRG-003',
+            'satuan' => 'pcs',
             'nama_produk' => 'Tidak Boleh',
             'kategori' => 'Snack',
             'harga_beli' => 1000,
@@ -117,6 +122,7 @@ class StokTest extends TestCase
         $this->actingAs($this->admin())->put(route('stok.update', $produk), [
             'barcode' => $produk->barcode,
             'nama_produk' => 'Kopi Sachet Baru',
+            'satuan' => 'pcs',
             'kategori' => 'Minuman',
             'harga_beli' => 2000,
             'harga_jual' => 3500,

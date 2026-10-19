@@ -1,0 +1,13 @@
+# Backup database Warungku (dev).
+#
+# Format /etc/cron.d (bukan /etc/crontabs/): setiap baris WAJIB menyebut user
+# sebelum perintah, dan nama file harus mengikuti pola /etc/cron.d/[a-zA-Z0-9_-]+.
+#
+# Backup jalan setiap hari jam 1 pagi. Jam 2 pagi sebenarnya lebih umum,
+# tapi jam 1 lebih aman untuk warung yang buka sampai larut — masih ada
+# kasir yang belum menutup buku pada jam 2.
+#
+# User root karena mysqldump dan penulisan ke volume butuh hak akses tersebut.
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+0 1 * * * root /usr/local/bin/backup.sh >> /proc/1/fd/1 2>&1

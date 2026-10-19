@@ -31,6 +31,7 @@
                 ['route' => 'transaksi.riwayat', 'label' => 'Riwayat Transaksi'],
                 ['route' => 'stok.index', 'label' => 'Produk & Stok'],
                 ['route' => 'laporan.index', 'label' => 'Laporan'],
+                ['route' => 'keuangan.tutup-buku', 'label' => 'Tutup Buku'],
             ];
         @endphp
 
@@ -42,6 +43,14 @@
         @endforeach
 
         @if (auth()->user()->isAdmin())
+            <div class="pemisah"></div>
+            <div class="label">Keuangan</div>
+            <a href="{{ route('keuangan.index') }}" class="{{ request()->routeIs('keuangan.*') ? 'aktif' : '' }}">Ringkasan Keuangan</a>
+            <a href="{{ route('keuangan.laba-rugi') }}" class="{{ request()->routeIs('keuangan.laba-rugi') ? 'aktif' : '' }}">Laba Rugi</a>
+            <a href="{{ route('keuangan.buku-kas') }}" class="{{ request()->routeIs('keuangan.buku-kas') ? 'aktif' : '' }}">Buku Kas</a>
+            <a href="{{ route('keuangan.pengeluaran') }}" class="{{ request()->routeIs('keuangan.pengeluaran*') ? 'aktif' : '' }}">Pengeluaran</a>
+            <a href="{{ route('pembelian.index') }}" class="{{ request()->routeIs('pembelian.*') ? 'aktif' : '' }}">Pembelian</a>
+
             <div class="pemisah"></div>
             <div class="label">Administrasi</div>
             <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'aktif' : '' }}">Manajemen Karyawan</a>

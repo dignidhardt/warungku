@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KeuanganController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\PembelianController;
 use App\Http\Controllers\StokController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\UserController;
@@ -20,6 +22,14 @@ use Illuminate\Support\Facades\Route;
 | URUTAN PENTING: rute statis harus didaftarkan SEBELUM rute berparameter
 | dengan prefiks sama. `/stok/create` wajib di atas `/stok/{stok}`, kalau tidak
 | "create" akan dianggap id produk dan halaman jadi 404.
+|
+| PEMISAHAN HAK AKSES:
+| - Kasir: kasir, riwayat, stok (lihat), laporan penjualan, tutup buku.
+| - Admin: pembelian, retur, pengeluaran, laba rugi, buku kas, kelola
+|   karyawan & produk, pembatalan transaksi.
+| Alasan tutup buku boleh kasir: itu pekerjaan akhir shift, bukan wewenang
+| pemilik. Tapi melihat laba rugi dan buku kas tetap admin, karena di situ
+| terlihat seluruh kondisi keuangan usaha.
 */
 
 Route::redirect('/', '/login');
@@ -44,13 +54,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/transaksi', [TransaksiController::class, 'store'])->name('transaksi.store');
     Route::get('/transaksi/{transaksi}/struk', [TransaksiController::class, 'struk'])->name('transaksi.struk');
 
-    // Riwayat: semua peran boleh melihat, hanya admin yang boleh membatalkan.
+    // Riwayat: semua peran boleh melihat, hanya admin yang boleh mengoreksi.
     Route::get('/riwayat', [TransaksiController::class, 'riwayat'])->name('transaksi.riwayat');
 
-    // ---------- Laporan (admin & kasir) ----------
+    // ---------- Laporan penjualan (admin & kasir) ----------
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
     Route::get('/laporan/export-excel', [LaporanController::class, 'exportExcel'])->name('laporan.excel');
     Route::get('/laporan/export-pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
+
+    // ---------- Tutup buku: pekerjaan akhir shift, boleh kasir ----------
+    Route::get('/tutup-buku', [KeuanganController::class, 'tutupBuku'])->name('keuangan.tutup-buku');
+    Route::post('/tutup-buku', [KeuanganController::class, 'simpanTutupBuku'])->name('keuangan.tutup-buku.simpan');
 
     // ---------- Stok: daftar boleh semua peran ----------
     Route::get('/stok', [StokController::class, 'index'])->name('stok.index');
@@ -58,9 +72,32 @@ Route::middleware('auth')->group(function () {
     // ---------- Khusus admin ----------
     Route::middleware(IsAdmin::class)->group(function () {
 
-        // Transaksi tercatat tidak boleh hilang tanpa jejak.
+        // Koreksi transaksi yang sudah terjadi.
         Route::post('/transaksi/{transaksi}/batal', [TransaksiController::class, 'batal'])
             ->name('transaksi.batal');
+
+        Route::get('/transaksi/{transaksi}/retur', [TransaksiController::class, 'formRetur'])
+            ->name('transaksi.retur');
+        Route::post('/transaksi/{transaksi}/retur', [TransaksiController::class, 'simpanRetur'])
+            ->name('transaksi.retur.simpan');
+
+        // ---------- Keuangan ----------
+        Route::get('/keuangan', [KeuanganController::class, 'index'])->name('keuangan.index');
+        Route::get('/keuangan/laba-rugi', [KeuanganController::class, 'labaRugi'])->name('keuangan.laba-rugi');
+        Route::get('/keuangan/buku-kas', [KeuanganController::class, 'bukuKas'])->name('keuangan.buku-kas');
+        Route::get('/keuangan/pengeluaran', [KeuanganController::class, 'pengeluaran'])->name('keuangan.pengeluaran');
+        Route::post('/keuangan/pengeluaran', [KeuanganController::class, 'simpanPengeluaran'])
+            ->name('keuangan.pengeluaran.simpan');
+        Route::delete('/keuangan/pengeluaran/{pengeluaran}', [KeuanganController::class, 'hapusPengeluaran'])
+            ->name('keuangan.pengeluaran.hapus');
+
+        // ---------- Pembelian ----------
+        Route::get('/pembelian', [PembelianController::class, 'index'])->name('pembelian.index');
+        Route::get('/pembelian/create', [PembelianController::class, 'create'])->name('pembelian.create');
+        Route::post('/pembelian', [PembelianController::class, 'store'])->name('pembelian.store');
+        Route::get('/pembelian/{pembelian}', [PembelianController::class, 'show'])->name('pembelian.show');
+        Route::delete('/pembelian/{pembelian}', [PembelianController::class, 'destroy'])
+            ->name('pembelian.batal');
 
         // Manajemen karyawan
         Route::get('/users', [UserController::class, 'index'])->name('users.index');

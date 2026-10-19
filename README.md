@@ -108,23 +108,37 @@ make live-build && make live-up
 
 | Halaman | Peran | Keterangan |
 |---|---|---|
-| Beranda | admin, kasir | Omzet, nota, laba kotor, stok menipis, produk terlaris |
-| Kasir | admin, kasir | Keranjang, bayar tunai, simpan → struk |
-| Riwayat Transaksi | admin, kasir | Filter tanggal & nomor nota; admin bisa membatalkan |
-| Produk & Stok | admin, kasir | Daftar + pencarian; ubah data hanya admin |
+| Beranda | admin, kasir | Omzet hari ini + ringkasan bulanan, nilai persediaan, stok menipis, saran pembelian, produk terlaris |
+| Kasir | admin, kasir | Keranjang, diskon, metode bayar (tunai/QRIS/transfer/debit), simpan → struk |
+| Riwayat Transaksi | admin, kasir | Filter tanggal & nomor nota; admin bisa membatalkan & meretur |
+| Produk & Stok | admin, kasir | Daftar + pencarian; ubah data hanya admin; satuan dasar & kemasan |
 | Detail Produk | admin, kasir | Riwayat mutasi stok; tambah/penyesuaian stok hanya admin |
 | Laporan | admin, kasir | Omzet, laba kotor, produk terlaris, export Excel & PDF |
+| Tutup Buku | admin, kasir | Hitung uang fisik akhir hari, bandingkan dengan catatan, catat selisih |
+| Ringkasan Keuangan | admin | Omzet bersih, laba kotor, biaya operasional, laba bersih, nilai persediaan |
+| Laba Rugi | admin | Laporan lengkap: penjualan, HPP, biaya per kategori, laba bersih |
+| Buku Kas | admin | Semua arus uang masuk & keluar, dengan penanda prive |
+| Pengeluaran | admin | Catat biaya operasional dan prive |
+| Pembelian | admin | Beli barang ke supplier: stok bertambah, harga beli diperbarui |
 | Manajemen Karyawan | admin | Tambah/ubah/hapus akun |
 
 Aturan penting:
 
 - **Stok tidak pernah diubah langsung** dari form produk. Semua perubahan lewat
-  penyesuaian, penambahan, atau transaksi — dan setiap perubahan tercatat di
-  tabel `stok_mutasis` beserta alasannya.
+  penyesuaian, penambahan, pembelian, atau transaksi — dan setiap perubahan
+  tercatat di tabel `stok_mutasis` beserta alasannya.
 - **Transaksi yang dibatalkan tidak dihapus.** Nota ditandai batal, stok
   dikembalikan, dan pelakunya dicatat.
 - **Harga diambil dari database**, bukan dari kiriman browser, sehingga harga
   tidak bisa diubah lewat request.
+- **Harga beli disimpan di setiap nota.** Laporan bulan lalu tidak berubah
+  ketika harga kulakan naik.
+- **Prive bukan biaya usaha.** Pengambilan uang pribadi pemilik mengurangi kas
+  tapi tidak mengurangi laba — dicatat terpisah di tabel `pengeluarans`.
+- **Tutup buku menyimpan selisih apa adanya.** Kalau uang tidak cocok, alasan
+  selisihnya wajib diisi; tanpa alasan, selisih tidak bisa ditelusuri.
+- **Retur berbeda dari pembatalan.** Retur hanya mengoreksi sebagian barang;
+  nota penjualan tetap ada karena penjualan itu memang terjadi.
 
 ---
 
@@ -136,6 +150,28 @@ make test
 
 Test berjalan di database `warungku_test` di dalam container dev. Database dev
 dan live tidak tersentuh.
+
+Ada juga skrip uji alur HTTP yang mengetuk aplikasi yang sedang jalan
+(login, catat pengeluaran, pembelian, transaksi, tutup buku, dan verifikasi
+baris yang benar-benar tersimpan di database):
+
+```bash
+bash scripts/uji-keuangan.sh
+```
+
+---
+
+## Backup
+
+Backup database berjalan otomatis tiap hari jam 1 pagi lewat container cron
+terpisah. Simpanannya 14 hari, lalu yang lama dihapus.
+
+```bash
+make backup-list   # lihat daftar backup terjadwal
+make backup-auto   # jalankan sekarang juga
+make backup        # dump manual ke folder backups/ di host
+make restore FILE=backups/warungku-dev-XXXX.sql
+```
 
 ---
 

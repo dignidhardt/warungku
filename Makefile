@@ -9,7 +9,7 @@ APP_LIVE := warungku-live-app
 URL_DEV  := http://127.0.0.1:8010
 URL_LIVE := http://127.0.0.1:8011
 
-.PHONY: help up down restart logs sh ps fresh seed test queue migrate status open db backup live-up live-down live-logs live-sh live-migrate live-build live-env clean restore
+.PHONY: help up down restart logs sh ps fresh seed test queue migrate status open db backup live-up live-down live-logs live-sh live-migrate live-build live-env clean restore backup-auto backup-list
 
 help: ## Tampilkan daftar perintah
 	@echo "Warungku — perintah yang tersedia:"
@@ -106,8 +106,17 @@ backup: ## Dump database dev ke backups/
 	@# sambil tetap menulis file yang tampak berhasil.
 	@docker exec warungku-dev-mysql mysqldump -uwarungku -psecret \
 		--single-transaction --no-tablespaces --routines --triggers \
+		--ssl-mode=DISABLED \
 		warungku_dev 2>/dev/null > backups/warungku-dev-$$(date +%Y%m%d-%H%M%S).sql
 	@ls -lh backups | tail -1
+
+backup-auto: ## Jalankan backup terjadwal sekarang (container cron)
+	@docker exec warungku-dev-backup /usr/local/bin/backup.sh
+	@echo "Backup otomatis juga jalan sendiri setiap hari jam 1 pagi."
+
+backup-list: ## Lihat daftar backup terjadwal (volume Docker)
+	@docker exec warungku-dev-backup ls -lh /var/www/html/backups/ 2>/dev/null || \
+		echo "Container backup belum jalan. Jalankan: make up"
 
 restore: ## Pulihkan database dev dari file backup (FILE=backups/....sql)
 	@test -n "$(FILE)" || (echo "Pakai: make restore FILE=backups/warungku-dev-XXXX.sql"; exit 1)

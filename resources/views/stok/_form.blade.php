@@ -35,6 +35,41 @@
                 <option value="Lainnya">
             </datalist>
         </div>
+
+        <div class="bidang">
+            <label for="satuan">Satuan</label>
+            <select id="satuan" name="satuan" required>
+                @foreach ($daftarSatuan as $s)
+                    <option value="{{ $s }}" @selected(old('satuan', $produk->satuan) === $s)>{{ $s }}</option>
+                @endforeach
+            </select>
+            <div class="bantuan">Satuan dasar — stok selalu disimpan dalam satuan ini.</div>
+        </div>
+    </div>
+
+    <div class="baris-form">
+        <div class="bidang">
+            <label for="satuan_kemasan">Satuan Kemasan</label>
+            <input type="text" id="satuan_kemasan" name="satuan_kemasan" list="daftar-kemasan"
+                   value="{{ old('satuan_kemasan', $produk->satuan_kemasan) }}"
+                   placeholder="mis. karung, dus, renceng">
+            <datalist id="daftar-kemasan">
+                <option value="karung">
+                <option value="dus">
+                <option value="renceng">
+                <option value="paket">
+                <option value="sak">
+            </datalist>
+            <div class="bantuan">Kosongkan kalau produk dijual per satuan dasar.</div>
+        </div>
+
+        <div class="bidang">
+            <label for="isi_kemasan">Isi per Kemasan</label>
+            <input type="number" id="isi_kemasan" name="isi_kemasan" min="1"
+                   value="{{ old('isi_kemasan', $produk->isi_kemasan) }}"
+                   placeholder="mis. 25 untuk karung isi 25 kg">
+            <div class="bantuan">1 karung = berapa satuan dasar. Kosongkan kalau tanpa kemasan.</div>
+        </div>
     </div>
 
     <div class="baris-form">
@@ -56,7 +91,7 @@
         @if ($produk->exists)
             <div class="bidang">
                 <label>Stok Saat Ini</label>
-                <input type="text" value="{{ $produk->stok }} pcs" disabled>
+                <input type="text" value="{{ $produk->labelStok($produk->stok) }}" disabled>
                 <div class="bantuan">
                     <a href="{{ route('stok.show', $produk) }}">Ubah lewat halaman detail produk</a>
                 </div>

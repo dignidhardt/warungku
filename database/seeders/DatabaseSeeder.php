@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Stok;
 use App\Models\User;
+use App\Services\TransaksiService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -53,22 +54,48 @@ class DatabaseSeeder extends Seeder
             ['barcode' => '8991002101068', 'nama_produk' => 'Air Mineral Aqua 600ml', 'kategori' => 'Minuman', 'harga_beli' => 2500, 'harga_jual' => 4000, 'stok' => 0],
         ];
 
-        $service = app(\App\Services\TransaksiService::class);
+        $service = app(TransaksiService::class);
         $admin = User::where('username', 'admin')->first();
 
         foreach ($produk as $item) {
             $stokAwal = $item['stok'];
 
-            // Produk dibuat dengan stok 0 lalu stok awal dicatat lewat service,
-            // bukan ditulis langsung ke kolom. Aturannya sama dengan aplikasi:
-            // setiap perubahan stok wajib punya baris di stok_mutasis. Kalau
-            // seeder menulis kolom langsung, data contoh jadi satu-satunya
-            // stok yang tidak punya jejak — dan itu menyembunyikan bug.
-            $produkBaru = Stok::updateOrCreate(
-                ['barcode' => $item['barcode']],
-                array_merge($item, ['stok' => 0, 'stok_minimal' => 5])
-            );
+            // Key `stok` HARUS dibuang dari data yang ditulis ke database.
+            //
+            // Alasannya: `array_merge($item, ...)` masih membawa key 'stok'
+            // beserta nilainya, sehingga kolom stok terisi langsung (120) tanpa
+            // baris mutasi. Setelah itu service menambah 120 lagi lewat
+            // mutasi, hasilnya 240 — stok dobel.
+            //
+            // Jadi: kolom stok SELALU 0 saat produk dibuat, dan stok awal
+            // ditambahkan lewat service supaya ada jejaknya di stok_mutasis.
+            //
+            // Kolom `stok` juga sengaja tidak ikut di-update saat produk sudah
+            // ada: kalau ikut, setiap `db:seed` akan menimpa stok produk jadi 0
+            // dan data yang sudah dipakai kasir ikut hilang. Seeder harus
+            // idempoten: aman dijalankan berulang tanpa merusak data.
+            $dataProduk = $item;
+            unset($dataProduk['stok']);
 
+            $ada = Stok::where('barcode', $item['barcode'])->first();
+
+            if ($ada) {
+                // Produk sudah ada: perbarui data produk saja, jangan sentuh
+                // kolom stok. Kalau stok ikut ditulis, setiap `db:seed` akan
+                // mengembalikan stok ke 0 dan memusnahkan penjualan yang
+                // sudah tercatat.
+                $ada->update(array_merge($dataProduk, ['stok_minimal' => 5]));
+                $produkBaru = $ada;
+            } else {
+                // Produk baru: dibuat dengan stok 0, lalu stok awal ditambahkan
+                // lewat service supaya ada baris mutasinya.
+                $produkBaru = Stok::create(
+                    array_merge($dataProduk, ['stok' => 0, 'stok_minimal' => 5])
+                );
+            }
+
+            // Stok awal hanya ditambahkan kalau produk ini belum punya
+            // riwayat mutasi sama sekali (artinya benar-benar baru dibuat).
             if ($stokAwal > 0 && ! $produkBaru->mutasis()->exists()) {
                 $service->tambahStok($produkBaru, $stokAwal, 'Stok awal data contoh', $admin);
             }

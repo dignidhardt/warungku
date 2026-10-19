@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Pembelian;
+use App\Models\Pengeluaran;
+use App\Models\Retur;
 use App\Models\Stok;
 use App\Models\Transaksi;
 use Illuminate\Support\Carbon;
@@ -40,9 +43,9 @@ class LaporanService
     }
 
     /**
-     * Ringkasan angka untuk satu periode.
+     * Ringkasan penjualan untuk satu periode.
      *
-     * @return array{omzet:int, laba:int, jumlah_transaksi:int, jumlah_item:int}
+     * @return array{omzet:int, laba:int, jumlah_transaksi:int, jumlah_item:int, retur:int, diskon:int}
      */
     public function ringkasan(Collection $transaksi): array
     {
@@ -51,10 +54,14 @@ class LaporanService
         $omzet = 0;
         $laba = 0;
         $jumlahItem = 0;
+        $retur = 0;
+        $diskon = 0;
 
         foreach ($transaksi as $row) {
             $omzet += (int) $row->grand_total;
             $laba += $row->hitungLaba($hargaBeli);
+            $retur += (int) $row->dikembalikan;
+            $diskon += (int) $row->diskon;
 
             foreach ($row->items as $item) {
                 $jumlahItem += (int) ($item['qty'] ?? 0);
@@ -66,7 +73,131 @@ class LaporanService
             'laba' => $laba,
             'jumlah_transaksi' => $transaksi->count(),
             'jumlah_item' => $jumlahItem,
+            'retur' => $retur,
+            'diskon' => $diskon,
         ];
+    }
+
+    /**
+     * Laporan laba rugi lengkap untuk satu periode.
+     *
+     * Susunannya:
+     *   Omzet bersih      = penjualan - retur
+     *   Harga pokok       = harga beli barang yang terjual
+     *   Laba kotor        = omzet bersih - harga pokok
+     *   Biaya operasional = pengeluaran jenis operasional (TANPA prive)
+     *   Laba bersih       = laba kotor - biaya operasional
+     *
+     * Prive sengaja tidak masuk biaya: itu pengambilan uang pribadi pemilik,
+     * bukan ongkos menjalankan usaha. Kalau dimasukkan, laba terlihat lebih
+     * kecil dari kenyataan dan pemilik salah menilai usahanya.
+     *
+     * @return array<string, int|array>
+     */
+    public function labaRugi(int $bulan, int $tahun): array
+    {
+        [$mulai, $selesai] = $this->rentangBulan($bulan, $tahun);
+        $transaksi = $this->transaksiPeriode($bulan, $tahun);
+
+        $penjualan = (int) $transaksi->sum('grand_total');
+        $retur = (int) $transaksi->sum('dikembalikan');
+        $omzetBersih = $penjualan - $retur;
+
+        // Harga pokok penjualan dihitung dari harga beli yang TERSIMPAN di
+        // rincian nota, bukan harga beli produk saat ini. Kalau memakai harga
+        // sekarang, laporan bulan lalu berubah setiap kali harga kulakan naik.
+        $hpp = 0;
+        foreach ($transaksi as $row) {
+            foreach ($row->items as $item) {
+                $hpp += (int) ($item['harga_beli'] ?? 0) * (int) ($item['qty'] ?? 0);
+            }
+        }
+
+        $labaKotor = $omzetBersih - $hpp;
+
+        $pengeluaran = Pengeluaran::whereBetween('tanggal', [$mulai->toDateString(), $selesai->toDateString()])->get();
+
+        $biayaOperasional = (int) $pengeluaran->where('jenis', '!=', Pengeluaran::JENIS_PRIVE)->sum('jumlah');
+        $prive = (int) $pengeluaran->where('jenis', Pengeluaran::JENIS_PRIVE)->sum('jumlah');
+
+        $labaBersih = $labaKotor - $biayaOperasional;
+
+        // Rincian biaya per kategori untuk ditampilkan di laporan.
+        $perKategori = $pengeluaran
+            ->where('jenis', '!=', Pengeluaran::JENIS_PRIVE)
+            ->groupBy('kategori')
+            ->map(fn (Collection $rows) => (int) $rows->sum('jumlah'))
+            ->sortDesc();
+
+        $pembelian = (int) Pembelian::whereBetween('tanggal', [$mulai->toDateString(), $selesai->toDateString()])
+            ->sum('total');
+
+        return [
+            'penjualan' => $penjualan,
+            'retur' => $retur,
+            'omzet_bersih' => $omzetBersih,
+            'hpp' => $hpp,
+            'laba_kotor' => $labaKotor,
+            'biaya_operasional' => $biayaOperasional,
+            'prive' => $prive,
+            'laba_bersih' => $labaBersih,
+            'pembelian' => $pembelian,
+            'per_kategori' => $perKategori,
+            'jumlah_transaksi' => $transaksi->count(),
+        ];
+    }
+
+    /**
+     * Buku kas: seluruh uang masuk dan keluar pada satu periode, urut waktu.
+     *
+     * @return Collection<int, array{tanggal:string, keterangan:string, masuk:int, keluar:int, jenis:string}>
+     */
+    public function bukuKas(int $bulan, int $tahun): Collection
+    {
+        [$mulai, $selesai] = $this->rentangBulan($bulan, $tahun);
+        $baris = collect();
+
+        foreach ($this->transaksiPeriode($bulan, $tahun) as $trx) {
+            $baris->push([
+                'tanggal' => $trx->created_at->toDateTimeString(),
+                'keterangan' => 'Penjualan '.$trx->nomor_transaksi.' ('.$trx->label_metode.')',
+                'masuk' => (int) $trx->grand_total,
+                'keluar' => 0,
+                'jenis' => 'penjualan',
+            ]);
+        }
+
+        foreach (Retur::whereBetween('tanggal', [$mulai, $selesai])->get() as $retur) {
+            $baris->push([
+                'tanggal' => $retur->tanggal->toDateTimeString(),
+                'keterangan' => 'Retur '.$retur->nomor_retur,
+                'masuk' => 0,
+                'keluar' => (int) $retur->total,
+                'jenis' => 'retur',
+            ]);
+        }
+
+        foreach (Pembelian::whereBetween('tanggal', [$mulai->toDateString(), $selesai->toDateString()])->get() as $beli) {
+            $baris->push([
+                'tanggal' => $beli->tanggal->toDateTimeString(),
+                'keterangan' => 'Pembelian '.$beli->nomor_pembelian.($beli->supplier ? ' - '.$beli->supplier : ''),
+                'masuk' => 0,
+                'keluar' => (int) $beli->total,
+                'jenis' => 'pembelian',
+            ]);
+        }
+
+        foreach (Pengeluaran::whereBetween('tanggal', [$mulai->toDateString(), $selesai->toDateString()])->get() as $keluar) {
+            $baris->push([
+                'tanggal' => $keluar->tanggal->toDateTimeString(),
+                'keterangan' => $keluar->kategori.' - '.$keluar->label_jenis,
+                'masuk' => 0,
+                'keluar' => (int) $keluar->jumlah,
+                'jenis' => $keluar->jenis,
+            ]);
+        }
+
+        return $baris->sortBy('tanggal')->values();
     }
 
     /**
@@ -131,8 +262,8 @@ class LaporanService
     }
 
     /**
-     * Peta id produk => harga beli, dipakai menghitung laba karena harga beli
-     * tidak disimpan di rincian nota.
+     * Peta id produk => harga beli, cadangan bila rincian nota lama belum
+     * menyimpan harga_beli.
      *
      * @return array<int, int>
      */

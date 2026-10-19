@@ -463,6 +463,66 @@ table.tabel tfoot td {
 .mb-0 { margin-bottom: 0; }
 .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
+/* ---------- Keuangan ---------- */
+
+/* Baris data sederhana: label kiri, nilai kanan. Dipakai di ringkasan
+   pengeluaran/pembelian dan daftar ringkas laporan. */
+.baris-data {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--garis);
+}
+.baris-data:last-child { border-bottom: none; }
+
+.judul-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+}
+
+/* Tabel laporan laba rugi: tanpa garis vertikal, angka rata kanan. */
+.tabel-laporan td { border-bottom: 1px solid var(--garis); }
+.tabel-laporan tr:last-child td { border-bottom: none; }
+.tabel-laporan .indent { padding-left: 28px; color: var(--abu); }
+.tabel-laporan .angka { text-align: right; white-space: nowrap; }
+
+/* Baris total ditebalkan; warnanya mengikuti kelas hijau/merah. */
+.tabel-laporan tr.tebal td { font-weight: 700; background: #f8fafc; }
+.tabel-laporan tr.hijau td { color: #15803d; }
+.tabel-laporan tr.merah td { color: #b91c1c; }
+
+.daftar-catatan {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--abu);
+}
+.daftar-catatan li { margin-bottom: 8px; }
+
+/* Kotak selisih kas: warna menyesuaikan arah selisih. */
+.selisih-pas { color: #15803d; font-weight: 700; }
+.selisih-lebih { color: #b45309; font-weight: 700; }
+.selisih-kurang { color: #b91c1c; font-weight: 700; }
+
+/* Baris barang yang bisa diretur / dibeli. */
+.baris-barang {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--garis);
+}
+.baris-barang .nama-barang { flex: 1 1 200px; }
+.baris-barang input[type="number"] { width: 90px; }
+.baris-barang input[type="text"] { width: 110px; }
+.baris-barang .satuan-barang { width: 90px; }
+
 /* Cetak: sembunyikan elemen navigasi */
 @media print {
     .navbar,

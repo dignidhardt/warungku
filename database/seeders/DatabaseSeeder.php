@@ -53,11 +53,25 @@ class DatabaseSeeder extends Seeder
             ['barcode' => '8991002101068', 'nama_produk' => 'Air Mineral Aqua 600ml', 'kategori' => 'Minuman', 'harga_beli' => 2500, 'harga_jual' => 4000, 'stok' => 0],
         ];
 
+        $service = app(\App\Services\TransaksiService::class);
+        $admin = User::where('username', 'admin')->first();
+
         foreach ($produk as $item) {
-            Stok::updateOrCreate(
+            $stokAwal = $item['stok'];
+
+            // Produk dibuat dengan stok 0 lalu stok awal dicatat lewat service,
+            // bukan ditulis langsung ke kolom. Aturannya sama dengan aplikasi:
+            // setiap perubahan stok wajib punya baris di stok_mutasis. Kalau
+            // seeder menulis kolom langsung, data contoh jadi satu-satunya
+            // stok yang tidak punya jejak — dan itu menyembunyikan bug.
+            $produkBaru = Stok::updateOrCreate(
                 ['barcode' => $item['barcode']],
-                $item + ['stok_minimal' => 5]
+                array_merge($item, ['stok' => 0, 'stok_minimal' => 5])
             );
+
+            if ($stokAwal > 0 && ! $produkBaru->mutasis()->exists()) {
+                $service->tambahStok($produkBaru, $stokAwal, 'Stok awal data contoh', $admin);
+            }
         }
     }
 }

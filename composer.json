@@ -1,9 +1,14 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "warungku/pos",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Aplikasi kasir (POS) sederhana untuk warung/toko kelontong",
+    "keywords": [
+        "laravel",
+        "pos",
+        "kasir",
+        "warung"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",

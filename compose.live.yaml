@@ -27,8 +27,13 @@ services:
       MYSQL_DATABASE: ${DB_DATABASE:-warungku}
       MYSQL_USER: ${DB_USERNAME:-warungku}
       MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD wajib diisi di .env.live}
-    # Sengaja TIDAK ada bagian `ports:` — database live hanya bisa diakses dari
-    # jaringan internal compose, tidak dari host/LAN.
+    # Port untuk DBeaver di host. DIBATAS ke 127.0.0.1 supaya database
+    # live tidak bisa dijangkau dari LAN — hanya dari komputer ini.
+    #
+    # Kalau live tidak perlu dibuka lewat DBeaver, hapus blok ini: aplikasi
+    # tetap jalan karena ia memakai jaringan internal compose.
+    ports:
+      - "127.0.0.1:3310:3306"
     volumes:
       - warungku-live-mysql-data:/var/lib/mysql
     healthcheck:

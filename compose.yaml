@@ -69,8 +69,10 @@ services:
       CACHE_STORE: database
       SESSION_DRIVER: database
       QUEUE_CONNECTION: database
-      # Dev otomatis migrate supaya `up` sekali perintah langsung bisa dipakai.
+      # Dev otomatis migrate + seed awal supaya `up` sekali perintah langsung
+      # bisa dipakai. Seed hanya jalan kalau tabel users masih kosong.
       AUTO_MIGRATE: "true"
+      AUTO_SEED: "true"
 
 volumes:
   warungku-dev-mysql-data:

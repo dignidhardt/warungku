@@ -42,6 +42,17 @@ fi
 # Migrasi otomatis HANYA untuk development. Live selalu manual.
 if [ "${APP_ENV:-local}" = "local" ] && [ "${AUTO_MIGRATE:-true}" = "true" ]; then
     php artisan migrate --force --no-interaction || true
+
+    # Seed otomatis SEKALI: hanya kalau tabel users masih kosong. Ini yang
+    # membuat instalasi baru langsung punya akun admin, tanpa menimpa data
+    # kalau container di-restart berkali-kali.
+    if [ "${AUTO_SEED:-true}" = "true" ]; then
+        jumlah_user=$(php artisan tinker --execute='echo \App\Models\User::count();' 2>/dev/null | tr -dc '0-9')
+        if [ "${jumlah_user:-0}" = "0" ]; then
+            echo "[entrypoint] database dev kosong, menjalankan seeder awal ..."
+            php artisan db:seed --force --no-interaction || true
+        fi
+    fi
 fi
 
 exec "$@"

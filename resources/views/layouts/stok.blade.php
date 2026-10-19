@@ -14,17 +14,25 @@
 
 <div style="width: 100%; padding-right: 30px; box-sizing: border-box;">
     
-    @if(session('success'))
-        <div style="background: #d1e7dd; color: #0f5132; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-family: sans-serif; font-weight: bold; border-left: 5px solid #198754; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            ✅ {{ session('success') }}
-        </div>
-    @endif
+   @if(session('success'))
+    <div class="alert alert-success" id="success-alert">
+        {{ session('success') }}
+    </div>
 
-    @if(session('error'))
-        <div style="background: #f8d7da; color: #842029; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-family: sans-serif; font-weight: bold; border-left: 5px solid #dc3545; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            ⚠️ {{ session('error') }}
-        </div>
-    @endif
+    <script>
+        setTimeout(function () {
+            const alert = document.getElementById('success-alert');
+            if (alert) {
+                alert.style.transition = "opacity 0.5s";
+                alert.style.opacity = "0";
+
+                setTimeout(function () {
+                    alert.remove();
+                }, 500);
+            }
+        }, 3000);
+    </script>
+@endif
     
     <div style="background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.05); width: 100%; box-sizing: border-box;">
         
@@ -115,4 +123,12 @@
 
     </div>
 </div>
+<script>
+    setTimeout(function() {
+        var alerts = document.querySelectorAll('.alert-auto-hide');
+        alerts.forEach(function(alert) {
+            alert.style.display = 'none';
+        });
+    }, 3000); 
+</script>
 @endsection

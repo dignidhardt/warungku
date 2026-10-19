@@ -1,6 +1,7 @@
 @if(session('error'))
     <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-family: sans-serif; font-weight: bold; border-left: 5px solid #dc3545;">
-        {{ session('error') }}
+        
+    {{ session('error') }}
     </div>
 @endif
 @extends('layouts.app')

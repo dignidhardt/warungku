@@ -10,43 +10,60 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 
 // --- 1. AUTHENTICATION ---
-Route::redirect('/', '/login'); 
+Route::redirect('/', '/login');
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // --- 2. RUTE TERPROTEKSI (HARUS LOGIN) ---
 Route::middleware('auth')->group(function () {
-    
+
     // Dashboard & Home
     Route::get('/home', function () {
+
         $totalProduk = DB::table('stok')->count();
+
         $transaksiHariIni = DB::table('transaksis')
             ->whereDate('created_at', Carbon::today())
             ->count();
-        return view('home', compact('totalProduk', 'transaksiHariIni'));
+
+        $totalPendapatanHariIni = DB::table('transaksis')
+            ->whereDate('created_at', Carbon::today())
+            ->sum('grand_total');
+
+        return view('home', compact(
+            'totalProduk',
+            'transaksiHariIni',
+            'totalPendapatanHariIni'
+        ));
     })->name('home');
-    
-    // Transaksi & Stok (Akses Umum Kasir & Admin)
+
+    // ==========================
+    // AKSES ADMIN & KASIR
+    // ==========================
+
     Route::resource('transaksi', TransaksiController::class);
+
     Route::get('/stok', [StokController::class, 'index'])->name('stok.index');
 
-    // --- 3. KHUSUS ADMIN ---
+    // Laporan bisa diakses Admin & Kasir
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+    Route::get('/laporan/export-excel', [LaporanController::class, 'exportExcel'])->name('laporan.excel');
+
+    // ==========================
+    // KHUSUS ADMIN
+    // ==========================
+
     Route::middleware(\App\Http\Middleware\IsAdmin::class)->group(function () {
-        
+
         // Manajemen Karyawan
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
-        // Tambahan: Fitur Edit User
         Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
-        
-        // Laporan
-        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
-        Route::get('/laporan/export-excel', [LaporanController::class, 'exportExcel'])->name('laporan.excel');
-        
-        // CRUD Stok (Hanya Admin)
+
+        // CRUD Stok
         Route::get('/stok/create', [StokController::class, 'create'])->name('stok.create');
         Route::post('/stok', [StokController::class, 'store'])->name('stok.store');
         Route::get('/stok/{stok}/edit', [StokController::class, 'edit'])->name('stok.edit');

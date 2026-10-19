@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Transaksi;
 use App\Exports\LaporanExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
 
 class LaporanController extends Controller
 {
@@ -26,19 +27,31 @@ class LaporanController extends Controller
             $daftarTahun = collect([date('Y')]);
         }
 
-        // Ambil data transaksi sesuai filter
-        $laporan = Transaksi::whereMonth('created_at', $bulanSelected)
-            ->whereYear('created_at', $tahunSelected)
-            ->get();
+        // Jika user memilih filter bulan & tahun
+        if ($request->filled('bulan') && $request->filled('tahun')) {
 
-        // Hitung total omset
-        $totalOmset = $laporan->sum('grand_total');
+            $laporan = Transaksi::whereMonth('created_at', $bulanSelected)
+                ->whereYear('created_at', $tahunSelected)
+                ->latest()
+                ->get();
+
+        } else {
+
+            // Default: hanya transaksi hari ini
+            $laporan = Transaksi::whereDate('created_at', Carbon::today())
+                ->latest()
+                ->get();
+        }
+
+        // Total pendapatan hari ini
+        $totalHariIni = Transaksi::whereDate('created_at', Carbon::today())
+            ->sum('grand_total');
 
         return view('layouts.laporan', compact(
             'laporan',
+            'totalHariIni',
             'bulanSelected',
             'tahunSelected',
-            'totalOmset',
             'daftarTahun'
         ));
     }

@@ -8,6 +8,8 @@
         <p style="color: #64748b; font-size: 14px; margin-top: 5px;">Aplikasi kasir Toko Kelontong aktif. Pantau ringkasan tokomu hari ini.</p>
     </div>
 
+    
+
     <div style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
         
         <div style="flex: 1; min-width: 240px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.05); border-left: 5px solid #0d6efd;">
@@ -47,14 +49,15 @@
                 Cek Stok
             </a>
 
-            @if(Auth::user()->role === 'admin')
-                <a href="{{ route('users.index') }}" style="text-decoration: none; display: flex; align-items: center; gap: 10px; background: #6366f1; color: white; padding: 14px 22px; border-radius: 8px; font-weight: bold; font-size: 14px;">
-                    Kelola Karyawan
-                </a>
-                <a href="{{ route('laporan.index') }}" style="text-decoration: none; display: flex; align-items: center; gap: 10px; background: #10b981; color: white; padding: 14px 22px; border-radius: 8px; font-weight: bold; font-size: 14px;">
-                    Laporan Keuangan
-                </a>
-            @endif
+@if(Auth::user()->role === 'admin')
+    <a href="{{ route('users.index') }}" style="text-decoration: none; display: flex; align-items: center; gap: 10px; background: #6366f1; color: white; padding: 14px 22px; border-radius: 8px; font-weight: bold; font-size: 14px;">
+        Kelola Karyawan
+    </a>
+@endif
+
+<a href="{{ route('laporan.index') }}" style="text-decoration: none; display: flex; align-items: center; gap: 10px; background: #10b981; color: white; padding: 14px 22px; border-radius: 8px; font-weight: bold; font-size: 14px;">
+    Laporan Keuangan
+</a>
         </div>
     </div>
 

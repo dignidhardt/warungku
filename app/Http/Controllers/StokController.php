@@ -53,13 +53,6 @@ class StokController extends Controller
         return redirect()->route('stok.index')->with('success', 'Produk berhasil ditambahkan!');
     }
 
-    // 4. MENAMPILKAN HALAMAN EDIT PRODUK
-    public function edit($id)
-    {
-        $stok = Stok::findOrFail($id);
-        return view('layouts.edit', compact('stok')); 
-    }
-
     // 5. MEMPROSES UPDATE DATA PRODUK
     public function update(Request $request, $id)
     {
@@ -90,4 +83,11 @@ class StokController extends Controller
         // Mengembalikan tampilan ke halaman utama dengan pesan sukses
         return redirect()->route('stok.index')->with('success', 'Produk berhasil dihapus!');
     }
+
+public function edit($id)
+{
+    $stok = Stok::findOrFail($id);
+
+    return view('layouts.edit', compact('stok'));
+}
 }

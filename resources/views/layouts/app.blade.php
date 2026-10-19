@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TOKO KELONTONG</title>
+<title>FOTOCOPY ADEEXPRESS</title>
 
 <style>
 *{
@@ -113,7 +113,7 @@ body{
 <div class="navbar">
     <div class="nav-left">
         <span class="menu-btn" onclick="toggleSidebar()">☰</span>
-        <h2>TOKO KELONTONG</h2>
+        <h2>FOTOCOPY ADEEXPRESS</h2>
     </div>
 
     <div class="nav-right">

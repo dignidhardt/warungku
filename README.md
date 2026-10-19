@@ -18,24 +18,26 @@ make up
 ```
 
 Perintah itu membangun image, menyalakan MySQL dan aplikasi, menjalankan
-migrasi, lalu menampilkan status kesehatan.
+migrasi, lalu **mengisi akun + produk contoh secara otomatis** saat database
+masih kosong. Jadi tidak ada langkah manual: `make up` lalu langsung login.
 
 | Bagian | Alamat |
 |---|---|
 | Aplikasi | http://127.0.0.1:8010 |
 | MySQL | `127.0.0.1:3309` — db `warungku_dev`, user `warungku`, sandi `secret` |
 
-Akun contoh (dibuat oleh seeder):
+Akun contoh (dibuat otomatis oleh seeder):
 
 | Peran | Username | Kata sandi |
 |---|---|---|
 | Admin | `admin` | `admin12345` |
 | Kasir | `kasir` | `kasir12345` |
 
-Isi data contoh produk:
+Seeder hanya berjalan kalau tabel `users` masih kosong, jadi restart container
+tidak menimpa data. Kalau ingin mengisi ulang dari nol:
 
 ```bash
-make seed
+make fresh      # hapus data dev, migrate + seed ulang
 ```
 
 Perintah lain yang sering dipakai:
@@ -52,6 +54,9 @@ make down       # matikan stack (data tetap aman di volume)
 
 **Kode di-mount dari host**, jadi mengedit file langsung terlihat di aplikasi.
 Rebuild hanya perlu kalau `Dockerfile` atau `composer.json` berubah.
+
+Tidak ada Node/npm di proyek ini: CSS ada di `public/css/warungku.css` dan
+JavaScript ditulis langsung di view. Tidak perlu `npm install` atau `npm run dev`.
 
 ---
 

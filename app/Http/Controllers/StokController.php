@@ -28,7 +28,7 @@ class StokController extends Controller
         ]);
 
         $produk = Stok::query()
-            ->with(['kategori', 'supplier'])
+            ->with(['kategoriRelasi', 'supplier'])
             ->when($keyword !== '', function ($query) use ($keyword) {
                 // Dikelompokkan dalam satu closure: tanpa itu, orWhere milik
                 // LIKE bisa lolos dari filter lain yang ditambahkan nanti.
@@ -125,8 +125,8 @@ class StokController extends Controller
 
         return view('stok.edit', [
             'produk' => $stok,
-            'kategoriTerpilih' => $stok->kategori,
-            'kodeBarangOtomatis' => Stok::kodeBarangOtomatis($stok->kategori),
+            'kategoriTerpilih' => $stok->kategoriRelasi,
+            'kodeBarangOtomatis' => Stok::kodeBarangOtomatis($stok->kategoriRelasi),
             'daftarKategori' => $daftarKategori,
             'petaKodeBarang' => $this->petaKodeBarang($daftarKategori),
             'daftarSatuan' => Satuan::orderBy('nama')->pluck('nama'),

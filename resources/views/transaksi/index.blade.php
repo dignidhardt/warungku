@@ -175,12 +175,13 @@
 
         <div class="papan-total" style="margin-top:16px;">
             <span class="label">Grand Total</span>
-            <strong id="teks-total">Rp 0</strong>
+            <strong id="teks-total">{{ uang(0) }}</strong>
         </div>
 
         <div class="baris-bayar">
             <label for="input-diskon">Diskon (Rp)</label>
-            <input type="number" id="input-diskon" min="0" step="500" value="0" placeholder="0">
+            <input type="text" id="input-diskon" inputmode="numeric" data-rupiah
+                   data-rupiah-asli="diskon" placeholder="0">
         </div>
 
         <div class="baris-bayar">
@@ -194,19 +195,23 @@
 
         <div class="baris-bayar">
             <label for="input-bayar">Uang Diterima</label>
-            <input type="number" id="input-bayar" min="0" step="1000" placeholder="0">
+            <input type="text" id="input-bayar" inputmode="numeric" data-rupiah
+                   data-rupiah-asli="bayar" placeholder="0">
         </div>
 
         <div class="baris-bayar">
             <span>Kembalian</span>
-            <strong class="kembalian" id="teks-kembalian">Rp 0</strong>
+            <strong class="kembalian" id="teks-kembalian">{{ uang(0) }}</strong>
         </div>
 
         <form id="form-transaksi" method="POST" action="{{ route('transaksi.store') }}">
             @csrf
             <input type="hidden" name="keranjang" id="input-keranjang">
-            <input type="hidden" name="bayar" id="input-bayar-hidden">
-            <input type="hidden" name="diskon" id="input-diskon-hidden">
+            {{-- Input tersembunyi ini yang menerima angka polos dari field
+                 tampilan "Rp 100.000,00". Atribut data-rupiah-tujuan
+                 connecting-kan keduanya. --}}
+            <input type="hidden" name="bayar" id="input-bayar-hidden" data-rupiah-tujuan="bayar">
+            <input type="hidden" name="diskon" id="input-diskon-hidden" data-rupiah-tujuan="diskon">
             <input type="hidden" name="metode_bayar" id="input-metode-hidden">
             <button type="submit" class="tombol hijau blok" id="btn-simpan" disabled>
                 Simpan &amp; Cetak Struk
@@ -253,8 +258,13 @@
     const wadahPesan = document.getElementById('pesan-kasir');
     const wadahSaran = document.getElementById('daftar-saran');
 
+    // Format rupiah: "Rp 100.000,00" — sama dengan helper `uang()` di PHP.
     const rupiah = function (angka) {
-        return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka || 0);
+        const n = Math.round((Number(angka) || 0) * 100) / 100;
+        const absolut = Math.abs(n).toFixed(2).replace('.', ',');
+        const ribuan = absolut.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+        return (n < 0 ? '\u2212 ' : '') + 'Rp ' + ribuan;
     };
 
     const subtotal = function () {
@@ -265,8 +275,11 @@
 
     // Diskon tidak boleh lebih besar dari nilai belanja; kalau begitu, total
     // akan negatif dan uang kembalian jadi tidak masuk akal.
+    //
+    // Nilai dibaca dari input tersembunyi: field tampilan berisi
+    // "Rp 100.000,00" yang tidak bisa di-parse langsung sebagai angka.
     const nilaiDiskon = function () {
-        const diskon = parseInt(elDiskon.value, 10) || 0;
+        const diskon = parseInt(elDiskonHidden.value, 10) || 0;
         return Math.max(0, Math.min(diskon, subtotal()));
     };
 
@@ -473,7 +486,7 @@
         // Untuk QRIS/transfer/debit tidak ada kembalian: uang yang diterima
         // dianggap pas, jadi kolom uang diterima dinonaktifkan.
         if (!metodeTunai()) {
-            elBayar.value = nilaiTotal;
+            elBayar.value = window.Rupiah.format(nilaiTotal);
             elBayar.disabled = true;
             elKembalian.textContent = rupiah(0);
             elKembalian.style.color = 'var(--hijau)';
@@ -482,7 +495,11 @@
         }
 
         elBayar.disabled = false;
-        const bayar = parseInt(elBayar.value, 10) || 0;
+
+        // Nilai uang dibaca dari input tersembunyi, bukan dari field
+        // tampilan: field tampilan berisi "Rp 100.000,00" yang tidak bisa
+        // di-parse langsung sebagai angka.
+        const bayar = parseInt(elBayarHidden.value, 10) || 0;
         const selisih = bayar - nilaiTotal;
 
         elKembalian.textContent = rupiah(selisih > 0 ? selisih : 0);
@@ -496,7 +513,9 @@
         elCari.value = '';
         elQty.value = 1;
         elBayar.value = '';
-        elDiskon.value = '0';
+        elBayarHidden.value = '';
+        elDiskon.value = '';
+        elDiskonHidden.value = '';
         elMetode.value = 'tunai';
         gambarKeranjang();
     }
@@ -615,9 +634,10 @@
 
     elDiskon.addEventListener('input', function () {
         // Diskon lebih besar dari belanja dikoreksi di layar, bukan diam-diam.
-        const diskon = parseInt(elDiskon.value, 10) || 0;
+        const diskon = parseInt(elDiskonHidden.value, 10) || 0;
         if (diskon > subtotal()) {
-            elDiskon.value = subtotal();
+            elDiskon.value = window.Rupiah.format(subtotal());
+            elDiskonHidden.value = subtotal();
         }
         hitungKembalian();
     });
@@ -627,7 +647,7 @@
 
     document.getElementById('form-transaksi').addEventListener('submit', function (event) {
         const nilaiTotal = total();
-        const bayar = parseInt(elBayar.value, 10) || 0;
+        const bayar = parseInt(elBayarHidden.value, 10) || 0;
 
         if (keranjang.length === 0) {
             event.preventDefault();

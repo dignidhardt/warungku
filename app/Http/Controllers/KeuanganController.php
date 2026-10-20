@@ -150,7 +150,8 @@ class KeuanganController extends Controller
         if ((int) $data['kas_fisik'] !== $seharusnya && blank($data['catatan'] ?? null)) {
             return back()->withInput()->with(
                 'error',
-                'Uang fisik tidak sama dengan seharusnya (Rp '.number_format(abs($seharusnya - (int) $data['kas_fisik']), 0, ',', '.').'). '
+                'Uang fisik tidak sama dengan seharusnya ('
+                    .uang(abs($seharusnya - (int) $data['kas_fisik'])).'). '
                 .'Tulis alasan selisihnya.'
             );
         }

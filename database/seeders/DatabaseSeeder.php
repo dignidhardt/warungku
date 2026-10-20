@@ -58,12 +58,15 @@ class DatabaseSeeder extends Seeder
      */
     private function seedMasterData(): void
     {
+        // Nama ditulis dengan huruf awal besar, sama seperti yang dilakukan
+        // MasterDataController — supaya data bawaan dan data yang dibuat
+        // admin lewat form konsisten.
         foreach (['pcs', 'kg', 'gram', 'liter', 'ml', 'bungkus', 'botol', 'sachet'] as $nama) {
-            Satuan::firstOrCreate(['nama' => $nama]);
+            Satuan::firstOrCreate(['nama' => huruf_awal_besar($nama)]);
         }
 
         foreach (['karung', 'dus', 'renceng', 'paket', 'sak'] as $nama) {
-            SatuanKemasan::firstOrCreate(['nama' => $nama]);
+            SatuanKemasan::firstOrCreate(['nama' => huruf_awal_besar($nama)]);
         }
     }
 

@@ -83,10 +83,10 @@
                                 </span>
                             </td>
                             <td class="kecil">{{ $item->keterangan ?: '—' }}</td>
-                            <td class="angka">Rp {{ number_format($item->jumlah, 0, ',', '.') }}</td>
+                            <td class="angka">{{ uang($item->jumlah) }}</td>
                             <td class="kanan">
                                 <form action="{{ route('keuangan.pengeluaran.hapus', $item) }}" method="POST"
-                                      onsubmit="return confirm('Hapus pengeluaran {{ $item->kategori }} Rp {{ number_format($item->jumlah, 0, ',', '.') }}?')">
+                                      onsubmit="return confirm('Hapus pengeluaran {{ $item->kategori }} {{ uang($item->jumlah) }}?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="tombol merah kecil">Hapus</button>

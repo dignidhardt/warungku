@@ -47,32 +47,32 @@
                 <tbody>
                     <tr>
                         <td>Penjualan</td>
-                        <td class="angka">Rp {{ number_format($data['penjualan'], 0, ',', '.') }}</td>
+                        <td class="angka">{{ uang($data['penjualan']) }}</td>
                     </tr>
                     @if ($data['retur'] > 0)
                         <tr>
                             <td class="indent">Retur penjualan</td>
-                            <td class="angka merah">− Rp {{ number_format($data['retur'], 0, ',', '.') }}</td>
+                            <td class="angka merah">{{ uang($data['retur']) }}</td>
                         </tr>
                     @endif
                     <tr class="tebal">
                         <td>Omzet bersih</td>
-                        <td class="angka">Rp {{ number_format($data['omzet_bersih'], 0, ',', '.') }}</td>
+                        <td class="angka">{{ uang($data['omzet_bersih']) }}</td>
                     </tr>
 
                     <tr>
                         <td class="indent">Harga pokok penjualan</td>
-                        <td class="angka merah">− Rp {{ number_format($data['hpp'], 0, ',', '.') }}</td>
+                        <td class="angka merah">{{ uang($data['hpp']) }}</td>
                     </tr>
                     <tr class="tebal">
                         <td>Laba kotor</td>
-                        <td class="angka">Rp {{ number_format($data['laba_kotor'], 0, ',', '.') }}</td>
+                        <td class="angka">{{ uang($data['laba_kotor']) }}</td>
                     </tr>
 
                     @forelse ($data['per_kategori'] as $kategori => $jumlah)
                         <tr>
                             <td class="indent">{{ $kategori }}</td>
-                            <td class="angka merah">− Rp {{ number_format($jumlah, 0, ',', '.') }}</td>
+                            <td class="angka merah">{{ uang($jumlah) }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -83,12 +83,12 @@
 
                     <tr class="tebal">
                         <td>Total biaya operasional</td>
-                        <td class="angka merah">− Rp {{ number_format($data['biaya_operasional'], 0, ',', '.') }}</td>
+                        <td class="angka merah">{{ uang($data['biaya_operasional']) }}</td>
                     </tr>
 
                     <tr class="tebal {{ $data['laba_bersih'] >= 0 ? 'hijau' : 'merah' }}">
                         <td>LABA BERSIH</td>
-                        <td class="angka">Rp {{ number_format($data['laba_bersih'], 0, ',', '.') }}</td>
+                        <td class="angka">{{ uang($data['laba_bersih']) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -104,11 +104,11 @@
                     harga beli produk saat ini. Jadi laporan bulan lalu tidak berubah kalau harga kulakan naik.
                 </li>
                 <li>
-                    <strong>Prive Rp {{ number_format($data['prive'], 0, ',', '.') }}</strong> tidak dihitung
+                    <strong>Prive {{ uang($data['prive']) }}</strong> tidak dihitung
                     biaya usaha — itu pengambilan uang pribadi pemilik, bukan ongkos menjalankan warung.
                 </li>
                 <li>
-                    <strong>Pembelian Rp {{ number_format($data['pembelian'], 0, ',', '.') }}</strong> juga
+                    <strong>Pembelian {{ uang($data['pembelian']) }}</strong> juga
                     tidak muncul di sini: pembelian menambah persediaan (aset), sedangkan yang jadi biaya
                     adalah harga pokok barang yang benar-benar terjual.
                 </li>
@@ -119,7 +119,7 @@
             <h3>Ringkas</h3>
             <div class="baris-data">
                 <div>Omzet bersih</div>
-                <div class="angka">Rp {{ number_format($data['omzet_bersih'], 0, ',', '.') }}</div>
+                <div class="angka">{{ uang($data['omzet_bersih']) }}</div>
             </div>
             <div class="baris-data">
                 <div>Margin kotor</div>

@@ -14,7 +14,7 @@
     <div class="baris-statistik">
         <div class="statistik hijau">
             <div class="label">Omzet Hari Ini</div>
-            <div class="nilai">Rp {{ number_format($totalPendapatanHariIni, 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($totalPendapatanHariIni) }}</div>
         </div>
 
         <div class="statistik">
@@ -24,7 +24,7 @@
 
         <div class="statistik kuning">
             <div class="label">Laba Kotor Hari Ini</div>
-            <div class="nilai">Rp {{ number_format($labaHariIni, 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($labaHariIni) }}</div>
         </div>
 
         <div class="statistik">
@@ -39,25 +39,25 @@
         <div class="baris-statistik">
             <div class="statistik hijau">
                 <div class="label">Omzet Bersih Bulan Ini</div>
-                <div class="nilai">Rp {{ number_format($labaRugi['omzet_bersih'], 0, ',', '.') }}</div>
+                <div class="nilai">{{ uang($labaRugi['omzet_bersih']) }}</div>
                 <div class="kecil">{{ $totalTransaksiBulanIni }} nota</div>
             </div>
 
             <div class="statistik kuning">
                 <div class="label">Laba Kotor Bulan Ini</div>
-                <div class="nilai">Rp {{ number_format($labaRugi['laba_kotor'], 0, ',', '.') }}</div>
-                <div class="kecil">HPP Rp {{ number_format($labaRugi['hpp'], 0, ',', '.') }}</div>
+                <div class="nilai">{{ uang($labaRugi['laba_kotor']) }}</div>
+                <div class="kecil">HPP {{ uang($labaRugi['hpp']) }}</div>
             </div>
 
             <div class="statistik merah">
                 <div class="label">Biaya Operasional</div>
-                <div class="nilai">Rp {{ number_format($labaRugi['biaya_operasional'], 0, ',', '.') }}</div>
-                <div class="kecil">Prive Rp {{ number_format($labaRugi['prive'], 0, ',', '.') }} (bukan biaya)</div>
+                <div class="nilai">{{ uang($labaRugi['biaya_operasional']) }}</div>
+                <div class="kecil">Prive {{ uang($labaRugi['prive']) }} (bukan biaya)</div>
             </div>
 
             <div class="statistik {{ $labaRugi['laba_bersih'] >= 0 ? 'hijau' : 'merah' }}">
                 <div class="label">Laba Bersih Bulan Ini</div>
-                <div class="nilai">Rp {{ number_format($labaRugi['laba_bersih'], 0, ',', '.') }}</div>
+                <div class="nilai">{{ uang($labaRugi['laba_bersih']) }}</div>
                 <div class="kecil">Setelah biaya operasional</div>
             </div>
         </div>
@@ -67,13 +67,13 @@
                 <h3>Nilai Persediaan</h3>
                 <div class="statistik hijau" style="margin:0;">
                     <div class="label">Uang tertahan di rak</div>
-                    <div class="nilai">Rp {{ number_format($nilaiPersediaan, 0, ',', '.') }}</div>
+                    <div class="nilai">{{ uang($nilaiPersediaan) }}</div>
                     <div class="kecil">Dihitung dari stok × harga beli</div>
                 </div>
 
                 <div class="baris-data" style="margin-top:12px;">
                     <div>Kas yang seharusnya ada hari ini</div>
-                    <div class="angka">Rp {{ number_format($kasSeharusnyaHariIni, 0, ',', '.') }}</div>
+                    <div class="angka">{{ uang($kasSeharusnyaHariIni) }}</div>
                 </div>
 
                 @if ($tutupBukuTerakhir)
@@ -188,7 +188,7 @@
                                 <td>{{ $trx->created_at->format('H:i') }}</td>
                                 <td>{{ $trx->kasir->name ?? '—' }}</td>
                                 <td class="kecil">{{ $trx->label_metode }}</td>
-                                <td class="angka">Rp {{ number_format($trx->grand_total, 0, ',', '.') }}</td>
+                                <td class="angka">{{ uang($trx->grand_total) }}</td>
                                 <td class="tengah">
                                     <a href="{{ route('transaksi.struk', $trx) }}" class="tombol kecil abu">Struk</a>
                                 </td>

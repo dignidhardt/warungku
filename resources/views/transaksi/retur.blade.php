@@ -42,7 +42,7 @@
                                 @endif
                             </div>
                         </div>
-                        <div class="angka">Rp {{ number_format($item['harga'], 0, ',', '.') }}</div>
+                        <div class="angka">{{ uang($item['harga']) }}</div>
                         <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $item['id'] }}">
                         <input type="number" name="items[{{ $loop->index }}][qty]" min="0"
                                max="{{ $item['sisa'] }}" value="0" class="jumlah-retur">
@@ -82,7 +82,7 @@
                                 <td>{{ $retur->nomor_retur }}</td>
                                 <td>{{ $retur->tanggal->format('d/m/Y H:i') }}</td>
                                 <td class="kecil">{{ $retur->alasan }}</td>
-                                <td class="angka">Rp {{ number_format($retur->total, 0, ',', '.') }}</td>
+                                <td class="angka">{{ uang($retur->total) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

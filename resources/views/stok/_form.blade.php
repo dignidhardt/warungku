@@ -107,7 +107,8 @@
 
         <div class="bidang">
             <label for="harga_beli">Harga Beli (Rp)</label>
-            <input type="number" id="harga_beli" name="harga_beli" min="0" required
+            <input type="text" id="harga_beli" name="harga_beli" inputmode="numeric"
+                   data-rupiah required
                    value="{{ old('harga_beli', $produk->harga_beli) }}">
         </div>
     </div>
@@ -115,7 +116,8 @@
     <div class="baris-form">
         <div class="bidang">
             <label for="harga_jual">Harga Jual (Rp)</label>
-            <input type="number" id="harga_jual" name="harga_jual" min="0" required
+            <input type="text" id="harga_jual" name="harga_jual" inputmode="numeric"
+                   data-rupiah required
                    value="{{ old('harga_jual', $produk->harga_jual) }}">
             <div class="bantuan">Tidak boleh lebih rendah dari harga beli.</div>
         </div>

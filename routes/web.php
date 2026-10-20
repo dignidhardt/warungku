@@ -11,6 +11,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\IsAdmin;
+use App\Http\Middleware\IsAdminOrGudang;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -71,6 +72,37 @@ Route::middleware('auth')->group(function () {
     // ---------- Stok: daftar boleh semua peran ----------
     Route::get('/stok', [StokController::class, 'index'])->name('stok.index');
 
+    // ---------- Stok & Pembelian: admin + gudang ----------
+    //
+    // Hak akses "Gudang": read/write Produk & Stok, Pembelian, dan
+    // Supplier — sama seperti admin untuk menu-menu itu. Yang tetap khusus
+    // admin saja: master data, keuangan, retur, dan karyawan.
+    Route::middleware(IsAdminOrGudang::class)->group(function () {
+
+        // ---------- Pembelian ----------
+        Route::get('/pembelian', [PembelianController::class, 'index'])->name('pembelian.index');
+        Route::get('/pembelian/create', [PembelianController::class, 'create'])->name('pembelian.create');
+        Route::post('/pembelian', [PembelianController::class, 'store'])->name('pembelian.store');
+        Route::get('/pembelian/{pembelian}', [PembelianController::class, 'show'])->name('pembelian.show');
+        Route::delete('/pembelian/{pembelian}', [PembelianController::class, 'destroy'])
+            ->name('pembelian.batal');
+
+        // ---------- Supplier ----------
+        Route::get('/supplier', [SupplierController::class, 'index'])->name('master.supplier');
+        Route::get('/supplier/create', [SupplierController::class, 'create'])->name('master.supplier.create');
+        Route::post('/supplier', [SupplierController::class, 'store'])->name('master.supplier.store');
+        Route::get('/supplier/{supplier}/edit', [SupplierController::class, 'edit'])->name('master.supplier.edit');
+        Route::put('/supplier/{supplier}', [SupplierController::class, 'update'])->name('master.supplier.update');
+        Route::delete('/supplier/{supplier}', [SupplierController::class, 'destroy'])->name('master.supplier.hapus');
+
+        // Produk: rute statis dulu, baru yang berparameter.
+        Route::get('/stok/create', [StokController::class, 'create'])->name('stok.create');
+        Route::post('/stok', [StokController::class, 'store'])->name('stok.store');
+        Route::get('/stok/{stok}/edit', [StokController::class, 'edit'])->name('stok.edit');
+        Route::put('/stok/{stok}', [StokController::class, 'update'])->name('stok.update');
+        Route::delete('/stok/{stok}', [StokController::class, 'destroy'])->name('stok.destroy');
+    });
+
     // ---------- Khusus admin ----------
     Route::middleware(IsAdmin::class)->group(function () {
 
@@ -92,14 +124,6 @@ Route::middleware('auth')->group(function () {
             ->name('keuangan.pengeluaran.simpan');
         Route::delete('/keuangan/pengeluaran/{pengeluaran}', [KeuanganController::class, 'hapusPengeluaran'])
             ->name('keuangan.pengeluaran.hapus');
-
-        // ---------- Pembelian ----------
-        Route::get('/pembelian', [PembelianController::class, 'index'])->name('pembelian.index');
-        Route::get('/pembelian/create', [PembelianController::class, 'create'])->name('pembelian.create');
-        Route::post('/pembelian', [PembelianController::class, 'store'])->name('pembelian.store');
-        Route::get('/pembelian/{pembelian}', [PembelianController::class, 'show'])->name('pembelian.show');
-        Route::delete('/pembelian/{pembelian}', [PembelianController::class, 'destroy'])
-            ->name('pembelian.batal');
 
         // Manajemen karyawan
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -124,21 +148,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/master/satuan-kemasan', [MasterDataController::class, 'simpanSatuanKemasan'])->name('master.satuan-kemasan.simpan');
         Route::put('/master/satuan-kemasan/{satuanKemasan}', [MasterDataController::class, 'ubahSatuanKemasan'])->name('master.satuan-kemasan.ubah');
         Route::delete('/master/satuan-kemasan/{satuanKemasan}', [MasterDataController::class, 'hapusSatuanKemasan'])->name('master.satuan-kemasan.hapus');
-
-        // ---------- Supplier ----------
-        Route::get('/supplier', [SupplierController::class, 'index'])->name('master.supplier');
-        Route::get('/supplier/create', [SupplierController::class, 'create'])->name('master.supplier.create');
-        Route::post('/supplier', [SupplierController::class, 'store'])->name('master.supplier.store');
-        Route::get('/supplier/{supplier}/edit', [SupplierController::class, 'edit'])->name('master.supplier.edit');
-        Route::put('/supplier/{supplier}', [SupplierController::class, 'update'])->name('master.supplier.update');
-        Route::delete('/supplier/{supplier}', [SupplierController::class, 'destroy'])->name('master.supplier.hapus');
-
-        // Produk: rute statis dulu, baru yang berparameter.
-        Route::get('/stok/create', [StokController::class, 'create'])->name('stok.create');
-        Route::post('/stok', [StokController::class, 'store'])->name('stok.store');
-        Route::get('/stok/{stok}/edit', [StokController::class, 'edit'])->name('stok.edit');
-        Route::put('/stok/{stok}', [StokController::class, 'update'])->name('stok.update');
-        Route::delete('/stok/{stok}', [StokController::class, 'destroy'])->name('stok.destroy');
 
         // Penyesuaian & penambahan stok (stok opname, barang datang)
         Route::post('/stok/{stok}/sesuaikan', [StokController::class, 'sesuaikan'])->name('stok.sesuaikan');

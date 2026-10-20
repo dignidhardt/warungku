@@ -104,7 +104,11 @@ class UserController extends Controller
                 'confirmed',
                 Password::min(8),
             ],
-            'role' => ['required', Rule::in([User::ROLE_ADMIN, User::ROLE_KASIR])],
+            'role' => ['required', Rule::in([
+                User::ROLE_ADMIN,
+                User::ROLE_KASIR,
+                User::ROLE_GUDANG,
+            ])],
         ], [
             'username.unique' => 'Username ini sudah dipakai.',
             'username.alpha_dash' => 'Username hanya boleh huruf, angka, garis bawah, dan tanda hubung.',

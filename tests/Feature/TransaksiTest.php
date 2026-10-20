@@ -231,7 +231,7 @@ class TransaksiTest extends TestCase
         $this->actingAs($admin)
             ->get(route('laporan.index'))
             ->assertOk()
-            ->assertSee('Rp 0', false);
+            ->assertSee('Rp 0,00', false);
     }
 
     public function test_riwayat_transaksi_bisa_difilter_nomor_nota(): void

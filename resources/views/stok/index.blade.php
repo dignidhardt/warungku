@@ -76,8 +76,8 @@
                                 <strong>{{ $item->nama_produk }}</strong>
                             </td>
                             <td>{{ $item->kategori }}</td>
-                            <td class="angka">Rp {{ number_format($item->harga_beli, 0, ',', '.') }}</td>
-                            <td class="angka">Rp {{ number_format($item->harga_jual, 0, ',', '.') }}</td>
+                            <td class="angka">{{ uang($item->harga_beli) }}</td>
+                            <td class="angka">{{ uang($item->harga_jual) }}</td>
                             <td class="tengah"><strong>{{ $item->stok }}</strong></td>
                             <td class="tengah">
                                 @php

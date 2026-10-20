@@ -53,11 +53,11 @@
     <tr>
         <td>
             <div class="label">Omzet</div>
-            <div class="nilai">Rp {{ number_format($ringkasan['omzet'], 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($ringkasan['omzet']) }}</div>
         </td>
         <td>
             <div class="label">Laba Kotor</div>
-            <div class="nilai">Rp {{ number_format($ringkasan['laba'], 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($ringkasan['laba']) }}</div>
         </td>
         <td>
             <div class="label">Jumlah Nota</div>
@@ -95,7 +95,7 @@
                         {{ $item['nama'] ?? 'Produk' }} (x{{ $item['qty'] ?? 0 }}){{ ! $loop->last ? ', ' : '' }}
                     @endforeach
                 </td>
-                <td class="angka">Rp {{ number_format($trx->grand_total, 0, ',', '.') }}</td>
+                <td class="angka">{{ uang($trx->grand_total) }}</td>
             </tr>
         @empty
             <tr>
@@ -107,7 +107,7 @@
         <tfoot>
             <tr>
                 <td colspan="5" class="angka">Total Omzet</td>
-                <td class="angka">Rp {{ number_format($ringkasan['omzet'], 0, ',', '.') }}</td>
+                <td class="angka">{{ uang($ringkasan['omzet']) }}</td>
             </tr>
         </tfoot>
     @endif
@@ -130,7 +130,7 @@
                     <td class="tengah">{{ $i + 1 }}</td>
                     <td>{{ $item['nama'] }}</td>
                     <td class="tengah">{{ $item['qty'] }} pcs</td>
-                    <td class="angka">Rp {{ number_format($item['omzet'], 0, ',', '.') }}</td>
+                    <td class="angka">{{ uang($item['omzet']) }}</td>
                 </tr>
             @endforeach
         </tbody>

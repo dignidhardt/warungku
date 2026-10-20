@@ -46,7 +46,7 @@
                             <td>{{ $item->tanggal->translatedFormat('d M Y') }}</td>
                             <td>{{ $item->supplier ?: '—' }}</td>
                             <td class="kecil">{{ $item->user->name ?? '—' }}</td>
-                            <td class="angka">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
+                            <td class="angka">{{ uang($item->total) }}</td>
                             <td class="kanan">
                                 <a href="{{ route('pembelian.show', $item) }}" class="tombol abu kecil">Detail</a>
                             </td>

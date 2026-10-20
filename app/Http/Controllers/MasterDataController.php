@@ -68,7 +68,7 @@ class MasterDataController extends Controller
         }
 
         Kategori::create([
-            'nama' => trim($data['nama']),
+            'nama' => huruf_awal_besar($data['nama']),
             'kode_barang' => $kode,
         ]);
 
@@ -98,7 +98,7 @@ class MasterDataController extends Controller
         $kode = strtoupper(trim((string) ($data['kode_barang'] ?? '')));
 
         $kategori->update([
-            'nama' => trim($data['nama']),
+            'nama' => huruf_awal_besar($data['nama']),
             'kode_barang' => $kode !== '' ? $kode : $kategori->kode_barang,
         ]);
 
@@ -144,7 +144,7 @@ class MasterDataController extends Controller
             'nama.unique' => 'Satuan ini sudah ada.',
         ]);
 
-        Satuan::create(['nama' => trim($data['nama'])]);
+        Satuan::create(['nama' => huruf_awal_besar($data['nama'])]);
 
         return redirect()
             ->route('master.satuan')
@@ -162,7 +162,7 @@ class MasterDataController extends Controller
             'nama.unique' => 'Satuan ini sudah ada.',
         ]);
 
-        $satuan->update(['nama' => trim($data['nama'])]);
+        $satuan->update(['nama' => huruf_awal_besar($data['nama'])]);
 
         return redirect()
             ->route('master.satuan')
@@ -201,7 +201,7 @@ class MasterDataController extends Controller
             'nama.unique' => 'Satuan kemasan ini sudah ada.',
         ]);
 
-        SatuanKemasan::create(['nama' => trim($data['nama'])]);
+        SatuanKemasan::create(['nama' => huruf_awal_besar($data['nama'])]);
 
         return redirect()
             ->route('master.satuan-kemasan')
@@ -219,7 +219,7 @@ class MasterDataController extends Controller
             'nama.unique' => 'Satuan kemasan ini sudah ada.',
         ]);
 
-        $satuanKemasan->update(['nama' => trim($data['nama'])]);
+        $satuanKemasan->update(['nama' => huruf_awal_besar($data['nama'])]);
 
         return redirect()
             ->route('master.satuan-kemasan')

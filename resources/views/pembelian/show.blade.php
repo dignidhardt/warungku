@@ -37,15 +37,15 @@
                             <td>{{ $item->produk->nama_produk ?? $item->stok_id }}</td>
                             <td class="kecil">{{ $item->supplier?->nama ?? '—' }}</td>
                             <td class="angka">{{ $item->qty }}</td>
-                            <td class="angka">Rp {{ number_format($item->harga_beli, 0, ',', '.') }}</td>
-                            <td class="angka">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                            <td class="angka">{{ uang($item->harga_beli) }}</td>
+                            <td class="angka">{{ uang($item->subtotal) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr>
                         <td colspan="4" class="kanan"><strong>Total</strong></td>
-                        <td class="angka"><strong>Rp {{ number_format($pembelian->total, 0, ',', '.') }}</strong></td>
+                        <td class="angka"><strong>{{ uang($pembelian->total) }}</strong></td>
                     </tr>
                 </tfoot>
             </table>

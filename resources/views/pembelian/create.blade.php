@@ -61,12 +61,13 @@
 
                         <input type="number" name="items[{{ $index }}][qty]" class="jumlah-beli"
                                min="1" value="{{ $item['qty'] ?? 1 }}" required>
-                        <input type="number" name="items[{{ $index }}][harga_beli]" class="harga-beli"
-                               min="0" step="100" value="{{ $item['harga_beli'] ?? 0 }}" required>
+                        <input type="text" name="items[{{ $index }}][harga_beli]" class="harga-beli"
+                               inputmode="numeric" data-rupiah required
+                               value="{{ $item['harga_beli'] ?? 0 }}">
                         <select name="items[{{ $index }}][satuan]" class="satuan-barang">
                             <option value="">satuan dasar</option>
                         </select>
-                        <div class="angka subtotal-beli">Rp 0</div>
+                        <div class="angka subtotal-beli">{{ uang(0) }}</div>
                         <button type="button" class="tombol merah kecil hapus-item">Hapus</button>
                     </div>
                 @endforeach
@@ -143,7 +144,11 @@
 
     function hitungSubtotal(baris) {
         const qty = parseInt(baris.querySelector('.jumlah-beli').value || '0', 10);
-        const harga = parseInt(baris.querySelector('.harga-beli').value || '0', 10);
+
+        // Harga beli diformat sebagai rupiah ("Rp 12.500,00"), jadi angka
+        // diambil lewat helper, bukan parseInt langsung.
+        const harga = window.Rupiah.keAngka(baris.querySelector('.harga-beli').value);
+
         return qty * harga;
     }
 
@@ -153,10 +158,10 @@
             const subtotal = hitungSubtotal(baris);
             total += subtotal;
             baris.querySelector('.subtotal-beli').textContent =
-                'Rp ' + subtotal.toLocaleString('id-ID');
+                window.Rupiah.format(subtotal);
         });
         document.getElementById('total-pembelian').textContent =
-            'Rp ' + total.toLocaleString('id-ID');
+            window.Rupiah.format(total);
     }
 
     // Harga beli diisi otomatis dari harga beli produk, tapi tetap bisa diubah.
@@ -165,7 +170,7 @@
             const baris = e.target.closest('.item-pembelian');
             const produk = produkDari(e.target);
             if (produk) {
-                baris.querySelector('.harga-beli').value = produk.harga;
+                window.Rupiah.setNilai(baris.querySelector('.harga-beli'), produk.harga);
                 isiOpsiSatuan(baris.querySelector('.satuan-barang'), produk);
             }
             isiSupplier(baris, produk);
@@ -183,7 +188,7 @@
         } else {
             baris.querySelector('.pilih-produk').value = '';
             baris.querySelector('.jumlah-beli').value = 1;
-            baris.querySelector('.harga-beli').value = 0;
+            window.Rupiah.setNilai(baris.querySelector('.harga-beli'), 0);
             isiOpsiSatuan(baris.querySelector('.satuan-barang'), null);
             isiSupplier(baris, null);
         }
@@ -198,7 +203,7 @@
         });
         template.querySelector('.pilih-produk').value = '';
         template.querySelector('.jumlah-beli').value = 1;
-        template.querySelector('.harga-beli').value = 0;
+        window.Rupiah.setNilai(template.querySelector('.harga-beli'), 0);
         template.querySelector('.satuan-barang').innerHTML = '<option value="">satuan dasar</option>';
         template.querySelector('[data-supplier-display]').textContent = '—';
         daftar.appendChild(template);

@@ -56,7 +56,7 @@
                             <td class="tengah">
                                 {{ collect($trx->items)->sum('qty') }} pcs
                             </td>
-                            <td class="angka">Rp {{ number_format($trx->grand_total, 0, ',', '.') }}</td>
+                            <td class="angka">{{ uang($trx->grand_total) }}</td>
                             <td class="tengah">
                                 @if ($trx->sudah_dibatalkan)
                                     <span class="lencana merah">Batal</span>

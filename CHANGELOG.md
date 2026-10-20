@@ -9,6 +9,12 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Ditambahkan
 
+- **Hak akses "Gudang"** (khusus admin yang membuat akunnya): read/write
+  Produk & Stok, Pembelian, dan Supplier — sama seperti admin untuk
+  menu-menu itu. Aksesnya: Beranda (read), Produk & Stok (read/write),
+  Pembelian (read/write), dan Supplier (read/write). Menu yang tampil
+  hanya empat itu; keuangan, retur, master data, dan karyawan tetap
+  khusus admin.
 - **Halaman master data** (khusus admin) untuk mengelola pilihan yang
   sebelumnya ditulis bebas sebagai teks di form produk:
   - **Kategori** — punya atribut "Kode Barang" 3 karakter (mis. "AAA").
@@ -50,6 +56,23 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Diubah
 
+- **Format rupiah seragam di seluruh aplikasi**: "Rp 100.000,00" (dengan
+  desimal, dua angka di belakang koma). Sebelumnya formatnya campuran —
+  sebagian "Rp 100.000", sebagian "Rp 100.000,00". Semua tampilan kini
+  memakai helper `uang()` yang sama.
+- **Input nominal rupiah terformat otomatis**: field "Uang Diterima" dan
+  "Diskon" di Kasir, harga beli/jual di form produk, harga beli di
+  form Pembelian, dan "Uang Fisik" di Tutup Buku. Saat diketik muncul
+  pemisah ribuan ("100.000"), saat selesai mengetik berubah jadi
+  "Rp 100.000,00". Angka yang dikirim ke server tetap angka polos.
+- **Nama master data memakai huruf awal besar**: "dus" tersimpan jadi
+  "Dus", "botol" jadi "Botol", "toko adi" jadi "Toko Adi".
+- **Halaman Detail Produk jadi read-only**: container "Tambah Stok (Barang
+  Datang)" dan "Penyesuaian Stok (Stok Opname)" dihapus, supaya tidak ada
+  dua jalan untuk mengubah stok yang bisa saling bertentangan. Informasi
+  kategori, supplier, satuan kemasan, dan batas stok menipis ditambahkan.
+- **Sidebar**: posisi "Pengeluaran" dan "Pembelian" ditukar. Menu untuk
+  peran Gudang ditampilkan terpisah di sesi "Gudang".
 - **Kode Barang** menggantikan nama "Barcode" di form produk. Nilainya
   terisi otomatis dari Kode Barang kategori ("AAA-001") dan bisa diubah
   manual oleh admin.
@@ -93,6 +116,11 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Diperbaiki
 
+- **Halaman Edit Produk 500 (TypeError)**. Relasi `kategori()` pada model
+  Stok bertabrakan dengan kolom teks `kategori`: Eloquent mencari atribut
+  lebih dulu, jadi `$produk->kategori` mengembalikan string, bukan objek
+  relasi — dan `kodeBarangOtomatis()` yang menerima `?Kategori` melempar
+  TypeError. Relasinya sekarang bernama `kategoriRelasi()`.
 - **Pagar pengaman test bisa menghapus data dev/live**. `RefreshDatabase`
   menjalankan `migrate:fresh` (menghapus SEMUA tabel) pada database yang
   belum di-migrate, dan guard yang menolak test non-test baru dijalankan

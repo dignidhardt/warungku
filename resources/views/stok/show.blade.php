@@ -6,7 +6,7 @@
     <div class="judul-halaman">
         <div>
             <h2>{{ $produk->nama_produk }}</h2>
-            <p>Barcode {{ $produk->barcode }} · {{ $produk->kategori }}</p>
+            <p>Kode Barang {{ $produk->barcode }} · {{ $produk->nama_kategori }}</p>
         </div>
         <div class="flex">
             <a href="{{ route('stok.index') }}" class="tombol abu">Kembali</a>
@@ -16,63 +16,53 @@
         </div>
     </div>
 
+    {{-- Halaman ini read-only: hanya menampilkan data dan riwayat. Semua
+         perubahan stok dilakukan lewat menu lain (Pembelian untuk barang
+         datang, atau penyesuaian dari admin), supaya tidak ada dua jalan
+         untuk mengubah stok yang bisa saling bertentangan. --}}
     <div class="baris-statistik">
         <div class="statistik {{ $produk->stok <= 0 ? 'merah' : ($produk->status_stok === 'menipis' ? 'kuning' : 'hijau') }}">
             <div class="label">Stok Saat Ini</div>
-            <div class="nilai">{{ $produk->stok }} <span class="satuan">pcs</span></div>
+            <div class="nilai">{{ $produk->stok }} <span class="satuan">{{ $produk->satuan }}</span></div>
         </div>
         <div class="statistik">
             <div class="label">Harga Beli</div>
-            <div class="nilai">Rp {{ number_format($produk->harga_beli, 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($produk->harga_beli) }}</div>
         </div>
         <div class="statistik">
             <div class="label">Harga Jual</div>
-            <div class="nilai">Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($produk->harga_jual) }}</div>
         </div>
         <div class="statistik hijau">
             <div class="label">Margin per Unit</div>
-            <div class="nilai">Rp {{ number_format($produk->margin, 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($produk->margin) }}</div>
         </div>
     </div>
 
-    @if (auth()->user()->isAdmin())
-        <div class="baris-statistik">
-            <div class="kartu mb-0" style="min-width: 300px;">
-                <h3>Tambah Stok (Barang Datang)</h3>
-                <form action="{{ route('stok.tambah', $produk) }}" method="POST">
-                    @csrf
-                    <div class="bidang">
-                        <label for="jumlah">Jumlah masuk</label>
-                        <input type="number" id="jumlah" name="jumlah" min="1" required placeholder="contoh: 24">
-                    </div>
-                    <div class="bidang">
-                        <label for="keterangan-tambah">Keterangan</label>
-                        <input type="text" id="keterangan-tambah" name="keterangan" placeholder="contoh: kiriman supplier">
-                    </div>
-                    <button type="submit" class="tombol hijau blok">Tambah Stok</button>
-                </form>
-            </div>
-
-            <div class="kartu mb-0" style="min-width: 300px;">
-                <h3>Penyesuaian Stok (Stok Opname)</h3>
-                <form action="{{ route('stok.sesuaikan', $produk) }}" method="POST">
-                    @csrf
-                    <div class="bidang">
-                        <label for="stok_baru">Jumlah stok sebenarnya</label>
-                        <input type="number" id="stok_baru" name="stok_baru" min="0" required
-                               value="{{ $produk->stok }}">
-                    </div>
-                    <div class="bidang">
-                        <label for="keterangan-sesuai">Alasan penyesuaian</label>
-                        <input type="text" id="keterangan-sesuai" name="keterangan" required
-                               placeholder="contoh: rusak, hilang, salah hitung">
-                        <div class="bantuan">Wajib diisi agar perubahan stok bisa diaudit.</div>
-                    </div>
-                    <button type="submit" class="tombol blok">Simpan Penyesuaian</button>
-                </form>
+    <div class="baris-statistik">
+        <div class="statistik">
+            <div class="label">Kategori</div>
+            <div class="nilai kecil">{{ $produk->nama_kategori }}</div>
+        </div>
+        <div class="statistik">
+            <div class="label">Supplier</div>
+            <div class="nilai kecil">{{ $produk->nama_supplier }}</div>
+        </div>
+        <div class="statistik">
+            <div class="label">Satuan Kemasan</div>
+            <div class="nilai kecil">
+                @if ($produk->punya_kemasan)
+                    1 {{ $produk->satuan_kemasan }} = {{ $produk->isi_kemasan }} {{ $produk->satuan }}
+                @else
+                    —
+                @endif
             </div>
         </div>
-    @endif
+        <div class="statistik">
+            <div class="label">Batas Stok Menipis</div>
+            <div class="nilai">{{ $produk->stok_minimal }} <span class="satuan">{{ $produk->satuan }}</span></div>
+        </div>
+    </div>
 
     <div class="kartu">
         <h3>Riwayat Stok</h3>
@@ -103,7 +93,11 @@
                                 @endphp
                                 <span class="lencana {{ $warnaJenis }}">{{ $mutasi->label }}</span>
                             </td>
-                            <td class="tengah"><strong>{{ $mutasi->jumlah }}</strong></td>
+                            <td class="tengah">
+                                <strong>
+                                    {{ $mutasi->jenis === 'keluar' ? '−' : '+' }}{{ $mutasi->jumlah }}
+                                </strong>
+                            </td>
                             <td class="tengah">{{ $mutasi->stok_sesudah }}</td>
                             <td class="kecil">{{ $mutasi->keterangan ?? '—' }}</td>
                             <td class="kecil">{{ $mutasi->user->name ?? '—' }}</td>

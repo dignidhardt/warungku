@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('judul', 'Beranda') — {{ config('warungku.nama_toko') }}</title>
     <link rel="stylesheet" href="{{ asset('css/warungku.css') }}">
+    {{-- Helper format rupiah. Dimuat blocking (bukan defer) supaya
+         `window.Rupiah` sudah ada ketika script inline di bawah berjalan. --}}
+    <script src="{{ asset('js/rupiah.js') }}"></script>
     @stack('gaya')
 </head>
 <body>
@@ -16,8 +19,11 @@
 
     <div class="nav-kanan">
         @auth
+            @php
+                $warnaLencana = auth()->user()->isAdmin() ? 'biru' : (auth()->user()->isGudang() ? 'hijau' : 'abu');
+            @endphp
             <span>{{ auth()->user()->name }}</span>
-            <span class="lencana {{ auth()->user()->isAdmin() ? 'biru' : 'abu' }}">{{ auth()->user()->role }}</span>
+            <span class="lencana {{ $warnaLencana }}">{{ auth()->user()->role }}</span>
         @endauth
     </div>
 </header>
@@ -25,31 +31,39 @@
 <div class="kerangka">
     <nav class="sidebar" id="sidebar">
         @php
-            $menu = [
-                ['route' => 'home', 'label' => 'Beranda'],
-                ['route' => 'transaksi.index', 'label' => 'Kasir'],
-                ['route' => 'stok.index', 'label' => 'Produk & Stok'],
-                ['route' => 'transaksi.riwayat', 'label' => 'Riwayat Transaksi'],
-                ['route' => 'laporan.index', 'label' => 'Laporan'],
-                ['route' => 'keuangan.tutup-buku', 'label' => 'Tutup Buku'],
-            ];
+            // Menu utama berbeda per peran:
+            // - Admin & Kasir: semua menu umum.
+            // - Gudang: hanya Beranda + Produk & Stok (menu di bawah),
+            //   ditambah Pembelian & Supplier di sesi "Gudang".
+            $menuUmum = auth()->user()->isGudang()
+                ? [['route' => 'home', 'label' => 'Beranda']]
+                : [
+                    ['route' => 'home', 'label' => 'Beranda'],
+                    ['route' => 'transaksi.index', 'label' => 'Kasir'],
+                    ['route' => 'stok.index', 'label' => 'Produk & Stok'],
+                    ['route' => 'transaksi.riwayat', 'label' => 'Riwayat Transaksi'],
+                    ['route' => 'laporan.index', 'label' => 'Laporan'],
+                    ['route' => 'keuangan.tutup-buku', 'label' => 'Tutup Buku'],
+                ];
         @endphp
 
-        @foreach ($menu as $item)
+        @foreach ($menuUmum as $item)
             <a href="{{ route($item['route']) }}"
                class="{{ request()->routeIs($item['route']) ? 'aktif' : '' }}">
                 {{ $item['label'] }}
             </a>
         @endforeach
 
+        {{-- Menu "Keuangan" & "Administrasi" hanya untuk admin. Gudang punya
+             menu sendiri di bawah (Produk & Stok, Pembelian, Supplier). --}}
         @if (auth()->user()->isAdmin())
             <div class="pemisah"></div>
             <div class="label">Keuangan</div>
             <a href="{{ route('keuangan.index') }}" class="{{ request()->routeIs('keuangan.*') ? 'aktif' : '' }}">Ringkasan Keuangan</a>
             <a href="{{ route('keuangan.laba-rugi') }}" class="{{ request()->routeIs('keuangan.laba-rugi') ? 'aktif' : '' }}">Laba Rugi</a>
             <a href="{{ route('keuangan.buku-kas') }}" class="{{ request()->routeIs('keuangan.buku-kas') ? 'aktif' : '' }}">Buku Kas</a>
-            <a href="{{ route('keuangan.pengeluaran') }}" class="{{ request()->routeIs('keuangan.pengeluaran*') ? 'aktif' : '' }}">Pengeluaran</a>
             <a href="{{ route('pembelian.index') }}" class="{{ request()->routeIs('pembelian.*') ? 'aktif' : '' }}">Pembelian</a>
+            <a href="{{ route('keuangan.pengeluaran') }}" class="{{ request()->routeIs('keuangan.pengeluaran*') ? 'aktif' : '' }}">Pengeluaran</a>
 
             <div class="pemisah"></div>
             <div class="label">Administrasi</div>
@@ -57,6 +71,12 @@
             <a href="{{ route('master.kategori') }}" class="{{ request()->routeIs('master.kategori*') ? 'aktif' : '' }}">Kategori</a>
             <a href="{{ route('master.satuan') }}" class="{{ request()->routeIs('master.satuan') ? 'aktif' : '' }}">Satuan</a>
             <a href="{{ route('master.satuan-kemasan') }}" class="{{ request()->routeIs('master.satuan-kemasan*') ? 'aktif' : '' }}">Satuan Kemasan</a>
+            <a href="{{ route('master.supplier') }}" class="{{ request()->routeIs('master.supplier*') ? 'aktif' : '' }}">Supplier</a>
+        @elseif (auth()->user()->isGudang())
+            <div class="pemisah"></div>
+            <div class="label">Gudang</div>
+            <a href="{{ route('stok.index') }}" class="{{ request()->routeIs('stok.index') ? 'aktif' : '' }}">Produk &amp; Stok</a>
+            <a href="{{ route('pembelian.index') }}" class="{{ request()->routeIs('pembelian.*') ? 'aktif' : '' }}">Pembelian</a>
             <a href="{{ route('master.supplier') }}" class="{{ request()->routeIs('master.supplier*') ? 'aktif' : '' }}">Supplier</a>
         @endif
 

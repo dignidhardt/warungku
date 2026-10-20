@@ -50,7 +50,7 @@ class SupplierController extends Controller
         $data = $this->validasi($request);
 
         $supplier = Supplier::create([
-            'nama' => $data['nama'],
+            'nama' => huruf_awal_besar($data['nama']),
             // Kode supplier otomatis (SUP-001, SUP-002, dst) supaya admin
             // tidak perlu menghafal urutannya.
             'kode' => Supplier::kodeBerikutnya(),
@@ -75,7 +75,7 @@ class SupplierController extends Controller
         $data = $this->validasi($request, $supplier->id);
 
         $supplier->update([
-            'nama' => $data['nama'],
+            'nama' => huruf_awal_besar($data['nama']),
             'telepon' => $data['telepon'] ?? null,
             'alamat' => $data['alamat'] ?? null,
         ]);

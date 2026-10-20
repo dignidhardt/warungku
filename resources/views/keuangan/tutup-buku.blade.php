@@ -26,7 +26,7 @@
         <div class="baris-statistik" style="margin-bottom: 16px;">
             <div class="statistik">
                 <div class="label">Seharusnya Ada</div>
-                <div class="nilai">Rp {{ number_format($kasSeharusnya, 0, ',', '.') }}</div>
+                <div class="nilai">{{ uang($kasSeharusnya) }}</div>
                 <div class="kecil">Penjualan tunai − retur − pengeluaran − prive</div>
             </div>
 
@@ -36,7 +36,7 @@
                     <div class="baris-data">
                         <div>{{ $label }}</div>
                         <div class="angka">
-                            {{ $nilai < 0 ? '− Rp '.number_format(abs($nilai), 0, ',', '.') : 'Rp '.number_format($nilai, 0, ',', '.') }}
+                            {{ uang($nilai) }}
                         </div>
                     </div>
                 @endforeach
@@ -50,8 +50,9 @@
             <div class="baris-filter">
                 <div class="bidang">
                     <label for="kas_fisik">Uang Fisik (Rp)</label>
-                    <input type="number" id="kas_fisik" name="kas_fisik" min="0" step="100"
-                           value="{{ old('kas_fisik') }}" required autofocus>
+                    <input type="text" id="kas_fisik" name="kas_fisik" inputmode="numeric"
+                           data-rupiah required autofocus
+                           value="{{ old('kas_fisik') }}">
                 </div>
 
                 <div class="bidang" style="flex: 1 1 100%;">
@@ -86,15 +87,15 @@
                     @forelse ($riwayat as $row)
                         <tr>
                             <td>{{ $row->tanggal->translatedFormat('d M Y') }}</td>
-                            <td class="angka">Rp {{ number_format($row->kas_seharusnya, 0, ',', '.') }}</td>
-                            <td class="angka">Rp {{ number_format($row->kas_fisik, 0, ',', '.') }}</td>
+                            <td class="angka">{{ uang($row->kas_seharusnya) }}</td>
+                            <td class="angka">{{ uang($row->kas_fisik) }}</td>
                             <td class="angka {{ 'selisih-'.$row->status_selisih }}">
                                 @if ($row->selisih > 0)
-                                    + Rp {{ number_format($row->selisih, 0, ',', '.') }}
+                                    + {{ uang($row->selisih) }}
                                 @elseif ($row->selisih < 0)
-                                    − Rp {{ number_format(abs($row->selisih), 0, ',', '.') }}
+                                    {{ uang($row->selisih) }}
                                 @else
-                                    Rp 0
+                                    {{ uang(0) }}
                                 @endif
                             </td>
                             <td class="kecil">{{ $row->catatan ?: '—' }}</td>

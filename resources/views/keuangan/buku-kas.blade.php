@@ -42,15 +42,15 @@
     <div class="baris-statistik">
         <div class="statistik hijau">
             <div class="label">Uang Masuk</div>
-            <div class="nilai">Rp {{ number_format($totalMasuk, 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($totalMasuk) }}</div>
         </div>
         <div class="statistik merah">
             <div class="label">Uang Keluar</div>
-            <div class="nilai">Rp {{ number_format($totalKeluar, 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($totalKeluar) }}</div>
         </div>
         <div class="statistik {{ ($totalMasuk - $totalKeluar) >= 0 ? 'hijau' : 'merah' }}">
             <div class="label">Selisih (saldo periode)</div>
-            <div class="nilai">Rp {{ number_format($totalMasuk - $totalKeluar, 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($totalMasuk - $totalKeluar) }}</div>
         </div>
     </div>
 
@@ -77,8 +77,8 @@
                                     <span class="lencana kuning">Prive</span>
                                 @endif
                             </td>
-                            <td class="angka">{{ $row['masuk'] > 0 ? 'Rp '.number_format($row['masuk'], 0, ',', '.') : '—' }}</td>
-                            <td class="angka">{{ $row['keluar'] > 0 ? 'Rp '.number_format($row['keluar'], 0, ',', '.') : '—' }}</td>
+                            <td class="angka">{{ $row['masuk'] > 0 ? uang($row['masuk']) : '—' }}</td>
+                            <td class="angka">{{ $row['keluar'] > 0 ? uang($row['keluar']) : '—' }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -90,8 +90,8 @@
                     <tfoot>
                         <tr>
                             <td colspan="2" class="kanan">Total</td>
-                            <td class="angka">Rp {{ number_format($totalMasuk, 0, ',', '.') }}</td>
-                            <td class="angka">Rp {{ number_format($totalKeluar, 0, ',', '.') }}</td>
+                            <td class="angka">{{ uang($totalMasuk) }}</td>
+                            <td class="angka">{{ uang($totalKeluar) }}</td>
                         </tr>
                     </tfoot>
                 @endif

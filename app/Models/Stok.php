@@ -51,7 +51,18 @@ class Stok extends Model
         return $this->hasMany(PembelianItem::class, 'stok_id');
     }
 
-    public function kategori(): BelongsTo
+    /**
+     * Relasi ke kategori.
+     *
+     * NAMANYA BUKAN `kategori()` dengan sengaja. Kolom `kategori` (teks
+     * lama) dan relasi `kategori` akan saling menimpa: Eloquent mencari
+     * atribut `kategori` lebih dulu, jadi `$produk->kategori` mengembalikan
+     * STRING kolom, bukan objek relasi — dan `kodeBarangOtomatis()` yang
+     * menerima `?Kategori` akan menerima string dan melempar TypeError.
+     *
+     * Jadi relasinya dinamai `kategoriRelasi()`.
+     */
+    public function kategoriRelasi(): BelongsTo
     {
         return $this->belongsTo(Kategori::class, 'kategori_id');
     }
@@ -64,12 +75,12 @@ class Stok extends Model
     /**
      * Nama kategori untuk ditampilkan.
      *
-     * Preferensi ke relasi `kategori` (data baru), dengan fallback ke kolom
-     * teks `kategori` (data lama yang belum sempat ditautkan).
+     * Preferensi ke relasi (data baru), dengan fallback ke kolom teks
+     * `kategori` (data lama yang belum sempat ditautkan).
      */
     public function getNamaKategoriAttribute(): string
     {
-        return $this->kategori?->nama ?? ($this->kategori ?: '—');
+        return $this->kategoriRelasi?->nama ?? ($this->kategori ?: '—');
     }
 
     /**

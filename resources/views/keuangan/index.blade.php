@@ -42,37 +42,37 @@
     <div class="baris-statistik">
         <div class="statistik hijau">
             <div class="label">Omzet Bersih</div>
-            <div class="nilai">Rp {{ number_format($labaRugi['omzet_bersih'], 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($labaRugi['omzet_bersih']) }}</div>
             <div class="kecil">
-                Penjualan Rp {{ number_format($labaRugi['penjualan'], 0, ',', '.') }}
+                Penjualan {{ uang($labaRugi['penjualan']) }}
                 @if ($labaRugi['retur'] > 0)
-                    − retur Rp {{ number_format($labaRugi['retur'], 0, ',', '.') }}
+                    − retur {{ uang($labaRugi['retur']) }}
                 @endif
             </div>
         </div>
 
         <div class="statistik kuning">
             <div class="label">Laba Kotor</div>
-            <div class="nilai">Rp {{ number_format($labaRugi['laba_kotor'], 0, ',', '.') }}</div>
-            <div class="kecil">Setelah harga pokok Rp {{ number_format($labaRugi['hpp'], 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($labaRugi['laba_kotor']) }}</div>
+            <div class="kecil">Setelah harga pokok {{ uang($labaRugi['hpp']) }}</div>
         </div>
 
         <div class="statistik">
             <div class="label">Biaya Operasional</div>
-            <div class="nilai">Rp {{ number_format($labaRugi['biaya_operasional'], 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($labaRugi['biaya_operasional']) }}</div>
             <div class="kecil">Tidak termasuk prive</div>
         </div>
 
         <div class="statistik {{ $labaRugi['laba_bersih'] >= 0 ? 'hijau' : 'merah' }}">
             <div class="label">Laba Bersih</div>
-            <div class="nilai">Rp {{ number_format($labaRugi['laba_bersih'], 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($labaRugi['laba_bersih']) }}</div>
             <div class="kecil">{{ $labaRugi['jumlah_transaksi'] }} nota</div>
         </div>
     </div>
 
     @if ($labaRugi['prive'] > 0)
         <div class="pesan info">
-            <strong>Prive bulan ini: Rp {{ number_format($labaRugi['prive'], 0, ',', '.') }}</strong> —
+            <strong>Prive bulan ini: {{ uang($labaRugi['prive']) }}</strong> —
             uang yang diambil pemilik untuk keperluan pribadi. Tidak dihitung biaya usaha, jadi tidak
             mengurangi laba di atas, tapi tetap mengurangi uang di laci.
             <a href="{{ route('keuangan.buku-kas', ['bulan' => $bulan, 'tahun' => $tahun]) }}">Lihat di Buku Kas</a>.
@@ -92,7 +92,7 @@
                         <strong>{{ $item->kategori }}</strong>
                         <div class="kecil">{{ $item->tanggal->translatedFormat('d M Y') }} — {{ $item->label_jenis }}</div>
                     </div>
-                    <div class="angka">Rp {{ number_format($item->jumlah, 0, ',', '.') }}</div>
+                    <div class="angka">{{ uang($item->jumlah) }}</div>
                 </div>
             @empty
                 <p class="redup">Belum ada pengeluaran tercatat.</p>
@@ -111,7 +111,7 @@
                         <strong>{{ $item->supplier ?: 'Tanpa supplier' }}</strong>
                         <div class="kecil">{{ $item->nomor_pembelian }} — {{ $item->tanggal->translatedFormat('d M Y') }}</div>
                     </div>
-                    <div class="angka">Rp {{ number_format($item->total, 0, ',', '.') }}</div>
+                    <div class="angka">{{ uang($item->total) }}</div>
                 </div>
             @empty
                 <p class="redup">Belum ada pembelian tercatat.</p>

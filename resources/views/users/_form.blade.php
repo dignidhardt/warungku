@@ -28,9 +28,21 @@
         <div class="bidang">
             <label for="role">Hak Akses</label>
             <select id="role" name="role" required>
-                <option value="kasir" @selected(old('role', $user->role) === 'kasir')>Kasir — akses terbatas</option>
-                <option value="admin" @selected(old('role', $user->role) === 'admin')>Admin — akses penuh</option>
+                <option value="kasir" @selected(old('role', $user->role) === 'kasir')>
+                    Kasir — jual & riwayat transaksi
+                </option>
+                <option value="gudang" @selected(old('role', $user->role) === 'gudang')>
+                    Gudang — kelola stok, pembelian & supplier
+                </option>
+                <option value="admin" @selected(old('role', $user->role) === 'admin')>
+                    Admin — akses penuh
+                </option>
             </select>
+            <div class="bantuan">
+                <strong>Kasir</strong>: Beranda, Kasir, Riwayat Transaksi, Laporan, Tutup Buku.<br>
+                <strong>Gudang</strong>: Beranda, Produk &amp; Stok, Pembelian, Supplier.<br>
+                <strong>Admin</strong>: semua halaman.
+            </div>
         </div>
     </div>
 

@@ -42,11 +42,11 @@
     <div class="baris-statistik">
         <div class="statistik hijau">
             <div class="label">Omzet {{ $namaBulan[(int) $bulanSelected] }} {{ $tahunSelected }}</div>
-            <div class="nilai">Rp {{ number_format($ringkasan['omzet'], 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($ringkasan['omzet']) }}</div>
         </div>
         <div class="statistik kuning">
             <div class="label">Laba Kotor</div>
-            <div class="nilai">Rp {{ number_format($ringkasan['laba'], 0, ',', '.') }}</div>
+            <div class="nilai">{{ uang($ringkasan['laba']) }}</div>
         </div>
         <div class="statistik">
             <div class="label">Jumlah Nota</div>
@@ -60,7 +60,7 @@
 
     <div class="pesan info">
         Omzet hari ini ({{ now()->translatedFormat('d F Y') }}):
-        <strong>Rp {{ number_format($hariIni['omzet'], 0, ',', '.') }}</strong>
+        <strong>{{ uang($hariIni['omzet']) }}</strong>
         dari {{ $hariIni['jumlah_transaksi'] }} nota.
         Transaksi yang dibatalkan tidak dihitung.
     </div>
@@ -88,7 +88,7 @@
                                     <td>{{ $i + 1 }}</td>
                                     <td>{{ $item['nama'] }}</td>
                                     <td class="tengah"><strong>{{ $item['qty'] }}</strong> pcs</td>
-                                    <td class="angka">Rp {{ number_format($item['omzet'], 0, ',', '.') }}</td>
+                                    <td class="angka">{{ uang($item['omzet']) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -125,7 +125,7 @@
                                     {{ $item['nama'] ?? 'Produk' }} (x{{ $item['qty'] ?? 0 }}){{ ! $loop->last ? ', ' : '' }}
                                 @endforeach
                             </td>
-                            <td class="angka">Rp {{ number_format($trx->grand_total, 0, ',', '.') }}</td>
+                            <td class="angka">{{ uang($trx->grand_total) }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -137,7 +137,7 @@
                     <tfoot>
                         <tr>
                             <td colspan="4" class="kanan">Total</td>
-                            <td class="angka">Rp {{ number_format($ringkasan['omzet'], 0, ',', '.') }}</td>
+                            <td class="angka">{{ uang($ringkasan['omzet']) }}</td>
                         </tr>
                     </tfoot>
                 @endif

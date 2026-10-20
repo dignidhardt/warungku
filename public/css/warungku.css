@@ -542,6 +542,38 @@ table.tabel tfoot td {
 .baris-barang input[type="text"] { width: 110px; }
 .baris-barang .satuan-barang { width: 90px; }
 
+/* Kolom supplier di baris pembelian: hanya tampilan, diambil otomatis
+   dari produk yang dipilih. */
+.baris-barang .supplier-barang {
+    flex: 0 1 150px;
+    min-width: 110px;
+    font-size: 12.5px;
+    color: var(--abu);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Baris judul kolom di atas baris pembelian. */
+.baris-verbal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 0 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #475569;
+    border-bottom: 1px solid var(--garis);
+    margin-bottom: 4px;
+}
+.baris-verbal .nama-barang { flex: 1 1 200px; }
+.baris-verbal .supplier-barang { flex: 0 1 150px; min-width: 110px; color: #475569; }
+/* Baris judul tidak boleh ikut terpotong border bawah baris barang. */
+.baris-verbal:not(.baris-verbal-pertama) { border-bottom: 0; padding-top: 6px; }
+
 /* Cetak: sembunyikan elemen navigasi */
 @media print {
     .navbar,

@@ -9,6 +9,21 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Ditambahkan
 
+- **Halaman master data** (khusus admin) untuk mengelola pilihan yang
+  sebelumnya ditulis bebas sebagai teks di form produk:
+  - **Kategori** — punya atribut "Kode Barang" 3 karakter (mis. "AAA").
+  - **Satuan** — satuan dasar produk (pcs, kg, liter, dst).
+  - **Satuan Kemasan** — satuan kemasan (karung, dus, renceng).
+  - **Supplier** — nama, kode (auto "SUP-001"), telepon, alamat.
+  Form Tambah Produk sekarang memakai dropdown dari halaman-halaman ini,
+  bukan input string custom. Master data lama sudah ditautkan otomatis
+  ke produk dan pembelian yang sudah tercatat.
+- **Kode Barang produk terisi otomatis** dari Kode Barang kategorinya:
+  kategori "AAA" memberi "AAA-001", "AAA-002", dan seterusnya. Admin tetap
+  boleh mengubahnya manual.
+- **Supplier otomatis di form Pembelian**: tiap baris barang menampilkan
+  supplier dari produk yang dipilih. Satu pembelian boleh berisi barang
+  dari beberapa supplier berbeda.
 - **Riwayat Stok** di halaman Produk & Stok: container baru berisi seluruh
   catatan "Stok Masuk" dan "Stok Keluar" beserta produknya, jumlah, stok
   sesudahnya, keterangan, dan siapa yang melakukan. Paginasi riwayat
@@ -35,6 +50,24 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Diubah
 
+- **Kode Barang** menggantikan nama "Barcode" di form produk. Nilainya
+  terisi otomatis dari Kode Barang kategori ("AAA-001") dan bisa diubah
+  manual oleh admin.
+- **Halaman Kasir**: field "Pilih Produk" dipindah ke card sendiri di
+  ATAS card "Keranjang", dan labelnya diubah dari "Cari nama atau barcode"
+  menjadi "Pilih Produk". Deskripsi "Pilih produk untuk melihat sisa
+  stok" dihapus. Tombol nominal cepat (Uang pas, 5.000, 10.000, 50.000,
+  100.000) dihapus dari form pembayaran.
+- **Halaman Pembelian**: container "Info Pembelian" dihapus. Isinya
+  (Tanggal & Keterangan) pindah ke card tersendiri, dan Supplier jadi
+  kolom otomatis per baris barang.
+- **Sidebar**: posisi "Riwayat Transaksi" dan "Produk & Stok" ditukar.
+  Menu Kategori, Satuan, Satuan Kemasan, dan Supplier ditambahkan di bawah
+  "Manajemen Karyawan" (khusus admin).
+- `make bersih` sekarang mempertahankan master data (kategori, satuan,
+  satuan kemasan, supplier) — bukan hanya akun. Master data adalah
+  konfigurasi, bukan data operasional: menghapusnya membuat form produk
+  tidak punya pilihan sama sekali.
 - **Lebar konten seragam di semua halaman utama** (Kasir, Riwayat Transaksi,
   Produk & Stok, Laporan, Tutup Buku): seluruh isi dibungkus satu wadah
   `.lebar-tetap` dengan lebar maksimum 1200px dan dipusatkan. Sebelumnya
@@ -60,6 +93,12 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Diperbaiki
 
+- **Pagar pengaman test bisa menghapus data dev/live**. `RefreshDatabase`
+  menjalankan `migrate:fresh` (menghapus SEMUA tabel) pada database yang
+  belum di-migrate, dan guard yang menolak test non-test baru dijalankan
+  SETELAH itu. Satu perintah `php artisan test` tanpa
+  `DB_DATABASE=warungku_test` bisa jadi menghapus seluruh data dev.
+  Sekarang guard dicek lebih dulu, sebelum database disentuh sama sekali.
 - **Menu navigasi menutupi isi halaman di layar ponsel**. Sidebar di bawah
   721px menjadi menu slide-in, tapi tidak pernah disembunyikan secara default,
   jadi ~70% halaman tertutup dan tidak bisa dibaca sampai tombol hamburger

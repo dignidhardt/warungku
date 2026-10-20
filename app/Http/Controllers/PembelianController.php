@@ -32,14 +32,13 @@ class PembelianController extends Controller
     public function create()
     {
         return view('pembelian.create', [
-            'produks' => Stok::orderBy('nama_produk')->get(),
+            'produks' => Stok::with('supplier')->orderBy('nama_produk')->get(),
         ]);
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'supplier' => ['nullable', 'string', 'max:120'],
             'tanggal' => ['required', 'date'],
             'keterangan' => ['nullable', 'string', 'max:500'],
             'items' => ['required', 'array', 'min:1'],
@@ -54,7 +53,6 @@ class PembelianController extends Controller
         try {
             $pembelian = $this->service->simpan(
                 $data['items'],
-                $data['supplier'] ?? null,
                 $data['tanggal'],
                 $data['keterangan'] ?? null,
                 $request->user()
@@ -69,7 +67,7 @@ class PembelianController extends Controller
 
     public function show(Pembelian $pembelian)
     {
-        $pembelian->load(['items.produk', 'user']);
+        $pembelian->load(['items.produk', 'items.supplier', 'user']);
 
         return view('pembelian.show', ['pembelian' => $pembelian]);
     }

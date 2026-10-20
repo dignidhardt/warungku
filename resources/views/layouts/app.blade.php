@@ -28,8 +28,8 @@
             $menu = [
                 ['route' => 'home', 'label' => 'Beranda'],
                 ['route' => 'transaksi.index', 'label' => 'Kasir'],
-                ['route' => 'transaksi.riwayat', 'label' => 'Riwayat Transaksi'],
                 ['route' => 'stok.index', 'label' => 'Produk & Stok'],
+                ['route' => 'transaksi.riwayat', 'label' => 'Riwayat Transaksi'],
                 ['route' => 'laporan.index', 'label' => 'Laporan'],
                 ['route' => 'keuangan.tutup-buku', 'label' => 'Tutup Buku'],
             ];
@@ -54,6 +54,10 @@
             <div class="pemisah"></div>
             <div class="label">Administrasi</div>
             <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'aktif' : '' }}">Manajemen Karyawan</a>
+            <a href="{{ route('master.kategori') }}" class="{{ request()->routeIs('master.kategori*') ? 'aktif' : '' }}">Kategori</a>
+            <a href="{{ route('master.satuan') }}" class="{{ request()->routeIs('master.satuan') ? 'aktif' : '' }}">Satuan</a>
+            <a href="{{ route('master.satuan-kemasan') }}" class="{{ request()->routeIs('master.satuan-kemasan*') ? 'aktif' : '' }}">Satuan Kemasan</a>
+            <a href="{{ route('master.supplier') }}" class="{{ request()->routeIs('master.supplier*') ? 'aktif' : '' }}">Supplier</a>
         @endif
 
         <div class="pemisah"></div>

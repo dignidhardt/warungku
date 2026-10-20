@@ -57,10 +57,10 @@ fresh: ## HAPUS data dev lalu migrate + seed ulang (butuh konfirmasi)
 	@read -p "Semua data DEV akan dihapus. Lanjut? [y/N] " ok; [ "$$ok" = "y" ] || exit 1
 	docker exec $(APP_DEV) php artisan migrate:fresh --seed --force
 
-bersih: ## KOSONGKAN data operasional (akun tetap ada) — untuk uji alur dari nol
+bersih: ## KOSONGKAN data operasional (akun & master data tetap ada) — untuk uji alur dari nol
 	@MYSQL_CONTAINER=$(APP_DEV_MYSQL) sh scripts/bersihkan-data.sh
-	@echo "Akun admin & kasir tetap ada. Data contoh produk juga hilang."
-	@echo "Butuh data contoh lagi? Jalankan: make seed"
+	@echo "Akun admin & kasir tetap ada, begitu juga master data (kategori, satuan, supplier)."
+	@echo "Data contoh produk hilang. Butuh data contoh lagi? Jalankan: make seed"
 
 seed: ## Isi data contoh (dev)
 	docker exec $(APP_DEV) php artisan db:seed --force

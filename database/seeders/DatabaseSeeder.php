@@ -2,7 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Kategori;
+use App\Models\Satuan;
+use App\Models\SatuanKemasan;
 use App\Models\Stok;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Services\TransaksiService;
 use Illuminate\Database\Seeder;
@@ -34,10 +38,32 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // Master data wajib ada sebelum produk: form produk memakai dropdown
+        // dari tabel ini, jadi kalau kosong form tidak bisa disimpan.
+        $this->seedMasterData();
+
         // Data contoh hanya untuk development, supaya kasir dan laporan
         // langsung bisa dicoba tanpa mengetik produk satu per satu.
         if (app()->environment('local', 'testing')) {
             $this->seedProdukContoh();
+        }
+    }
+
+    /**
+     * Master data dasar: satuan & satuan kemasan.
+     *
+     * Kategori dan supplier sengaja TIDAK diisi di sini: keduanya butuh
+     * keputusan pemilik (kode barang per kategori, daftar supplier aslinya).
+     * Admin bisa menambahkannya lewat halaman master data.
+     */
+    private function seedMasterData(): void
+    {
+        foreach (['pcs', 'kg', 'gram', 'liter', 'ml', 'bungkus', 'botol', 'sachet'] as $nama) {
+            Satuan::firstOrCreate(['nama' => $nama]);
+        }
+
+        foreach (['karung', 'dus', 'renceng', 'paket', 'sak'] as $nama) {
+            SatuanKemasan::firstOrCreate(['nama' => $nama]);
         }
     }
 
@@ -57,8 +83,20 @@ class DatabaseSeeder extends Seeder
         $service = app(TransaksiService::class);
         $admin = User::where('username', 'admin')->first();
 
+        // Kategori & supplier contoh dibuat per kategori produk, supaya form
+        // produk tetap punya pilihan yang valid.
+        $supplierContoh = Supplier::firstOrCreate(
+            ['nama' => 'Toko Sembako Jaya'],
+            ['kode' => Supplier::kodeBerikutnya(), 'telepon' => '0812-3456-7890']
+        );
+
         foreach ($produk as $item) {
             $stokAwal = $item['stok'];
+
+            $kategori = Kategori::firstOrCreate(
+                ['nama' => $item['kategori']],
+                ['kode_barang' => strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $item['kategori']), 0, 3))]
+            );
 
             // Key `stok` HARUS dibuang dari data yang ditulis ke database.
             //
@@ -76,6 +114,10 @@ class DatabaseSeeder extends Seeder
             // idempoten: aman dijalankan berulang tanpa merusak data.
             $dataProduk = $item;
             unset($dataProduk['stok']);
+            unset($dataProduk['kategori']);
+
+            $dataProduk['kategori_id'] = $kategori->id;
+            $dataProduk['supplier_id'] = $supplierContoh->id;
 
             $ada = Stok::where('barcode', $item['barcode'])->first();
 

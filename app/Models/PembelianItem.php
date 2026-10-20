@@ -12,6 +12,7 @@ class PembelianItem extends Model
     protected $fillable = [
         'pembelian_id',
         'stok_id',
+        'supplier_id',
         'qty',
         'harga_beli',
         'subtotal',
@@ -34,5 +35,10 @@ class PembelianItem extends Model
     public function produk(): BelongsTo
     {
         return $this->belongsTo(Stok::class, 'stok_id');
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 }

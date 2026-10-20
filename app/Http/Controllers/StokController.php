@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kategori;
+use App\Models\Satuan;
+use App\Models\SatuanKemasan;
 use App\Models\Stok;
 use App\Models\StokMutasi;
+use App\Models\Supplier;
 use App\Services\TransaksiService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -24,6 +28,7 @@ class StokController extends Controller
         ]);
 
         $produk = Stok::query()
+            ->with(['kategori', 'supplier'])
             ->when($keyword !== '', function ($query) use ($keyword) {
                 // Dikelompokkan dalam satu closure: tanpa itu, orWhere milik
                 // LIKE bisa lolos dari filter lain yang ditambahkan nanti.
@@ -67,11 +72,27 @@ class StokController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $kategoriTerpilih = null;
+
+        // Kalau datang dari halaman kategori ("tambah produk di kategori
+        // ini"), kategori langsung terisi.
+        if ($request->filled('kategori_id')) {
+            $kategoriTerpilih = Kategori::find($request->integer('kategori_id'));
+        }
+
+        $daftarKategori = Kategori::orderBy('nama')->get();
+
         return view('stok.create', [
-            'produk' => new Stok(['stok_minimal' => 5, 'satuan' => 'pcs']),
-            'daftarSatuan' => Stok::SATUAN_PILIHAN,
+            'produk' => new Stok(['stok_minimal' => 5]),
+            'kategoriTerpilih' => $kategoriTerpilih,
+            'kodeBarangOtomatis' => Stok::kodeBarangOtomatis($kategoriTerpilih),
+            'daftarKategori' => $daftarKategori,
+            'petaKodeBarang' => $this->petaKodeBarang($daftarKategori),
+            'daftarSatuan' => Satuan::orderBy('nama')->pluck('nama'),
+            'daftarSatuanKemasan' => SatuanKemasan::orderBy('nama')->pluck('nama'),
+            'daftarSupplier' => Supplier::orderBy('nama')->get(),
         ]);
     }
 
@@ -100,10 +121,38 @@ class StokController extends Controller
 
     public function edit(Stok $stok)
     {
+        $daftarKategori = Kategori::orderBy('nama')->get();
+
         return view('stok.edit', [
             'produk' => $stok,
-            'daftarSatuan' => Stok::SATUAN_PILIHAN,
+            'kategoriTerpilih' => $stok->kategori,
+            'kodeBarangOtomatis' => Stok::kodeBarangOtomatis($stok->kategori),
+            'daftarKategori' => $daftarKategori,
+            'petaKodeBarang' => $this->petaKodeBarang($daftarKategori),
+            'daftarSatuan' => Satuan::orderBy('nama')->pluck('nama'),
+            'daftarSatuanKemasan' => SatuanKemasan::orderBy('nama')->pluck('nama'),
+            'daftarSupplier' => Supplier::orderBy('nama')->get(),
         ]);
+    }
+
+    /**
+     * Peta "kategori id -> Kode Barang berikutnya".
+     *
+     * Dikirim ke browser supaya pilihan kategori langsung menghasilkan kode
+     * yang benar tanpa perlu reload halaman.
+     *
+     * @param  \Illuminate\Support\Collection<int, Kategori>  $daftarKategori
+     * @return array<int, string>
+     */
+    private function petaKodeBarang($daftarKategori): array
+    {
+        $peta = [];
+
+        foreach ($daftarKategori as $kategori) {
+            $peta[$kategori->id] = Stok::kodeBarangOtomatis($kategori);
+        }
+
+        return $peta;
     }
 
     public function update(Request $request, Stok $stok)
@@ -186,7 +235,7 @@ class StokController extends Controller
      */
     private function validasi(Request $request, ?int $idProduk = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'barcode' => [
                 'required', 'string', 'max:64',
                 // Barcode unik: dua produk berkode sama membuat pemindaian di
@@ -194,20 +243,41 @@ class StokController extends Controller
                 Rule::unique('stok', 'barcode')->ignore($idProduk),
             ],
             'nama_produk' => ['required', 'string', 'max:255'],
-            'satuan' => ['required', 'string', 'max:20'],
-            'satuan_kemasan' => ['nullable', 'string', 'max:20', 'required_with:isi_kemasan'],
+            'satuan' => [
+                'required', 'string', 'max:20',
+                // Satuan harus salah satu opsi yang terdaftar di master data.
+                Rule::exists('satuans', 'nama'),
+            ],
+            'satuan_kemasan' => [
+                'nullable', 'string', 'max:20',
+                Rule::exists('satuan_kemisans', 'nama'),
+                'required_with:isi_kemasan',
+            ],
             'isi_kemasan' => ['nullable', 'integer', 'min:1', 'required_with:satuan_kemasan'],
-            'kategori' => ['required', 'string', 'max:100'],
+            'kategori_id' => ['required', 'integer', 'exists:kategoris,id'],
+            'supplier_id' => ['required', 'integer', 'exists:suppliers,id'],
             'harga_beli' => ['required', 'integer', 'min:0'],
             'harga_jual' => ['required', 'integer', 'min:0', 'gte:harga_beli'],
             'stok' => ['nullable', 'integer', 'min:0'],
             'stok_minimal' => ['nullable', 'integer', 'min:0'],
         ], [
             'harga_jual.gte' => 'Harga jual tidak boleh lebih rendah dari harga beli.',
-            'barcode.unique' => 'Barcode ini sudah dipakai produk lain.',
+            'barcode.unique' => 'Kode Barang ini sudah dipakai produk lain.',
             'satuan.required' => 'Satuan wajib diisi (pcs, kg, liter, dll).',
+            'satuan.exists' => 'Satuan ini belum terdaftar di master data Satuan.',
+            'satuan_kemasan.exists' => 'Satuan kemasan ini belum terdaftar di master data Satuan Kemasan.',
             'satuan_kemasan.required_with' => 'Isi kemasan wajib diisi kalau nama kemasan diisi.',
             'isi_kemasan.required_with' => 'Nama kemasan wajib diisi kalau isi kemasan diisi.',
+            'kategori_id.required' => 'Kategori wajib dipilih.',
+            'kategori_id.exists' => 'Kategori ini tidak ditemukan.',
+            'supplier_id.required' => 'Supplier wajib dipilih.',
+            'supplier_id.exists' => 'Supplier ini tidak ditemukan.',
         ]);
+
+        // Kolom teks `kategori` disimpan sebagai salinan tampilan supaya
+        // laporan per-kategori dan pencarian lama tetap bekerja.
+        $data['kategori'] = Kategori::find($data['kategori_id'])?->nama;
+
+        return $data;
     }
 }

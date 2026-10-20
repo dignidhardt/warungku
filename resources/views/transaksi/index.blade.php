@@ -123,6 +123,34 @@
     {{-- Tempat pesan dari JS: satu wadah, bukan alert() yang memblokir. --}}
     <div id="pesan-kasir"></div>
 
+    {{-- ---------- Pilih produk: di ATAS keranjang ---------- --}}
+    <div class="kartu">
+        <h3>Pilih Produk</h3>
+
+        <div class="tambah-produk">
+            <div class="bidang saran-produk">
+                <label for="cari-produk">Pilih Produk</label>
+                <input type="text" id="cari-produk" autocomplete="off"
+                       placeholder="Pilih Produk">
+                <div class="daftar-saran" id="daftar-saran"></div>
+            </div>
+
+            <div class="bidang satuan-produk">
+                <label for="qty-produk">Jumlah</label>
+                <input type="number" id="qty-produk" value="1" min="1" step="1">
+            </div>
+
+            <button type="button" id="btn-tambah" class="tombol">+ Tambah</button>
+        </div>
+
+        @if ($produk->isEmpty())
+            <div class="pesan galat" style="margin-top:16px; margin-bottom:0;">
+                Belum ada produk yang stoknya tersedia. Tambahkan produk di menu Produk &amp; Stok.
+            </div>
+        @endif
+    </div>
+
+    {{-- ---------- Keranjang & pembayaran ---------- --}}
     <div class="kartu">
         <h3>Keranjang</h3>
 
@@ -142,38 +170,8 @@
                         <td colspan="5" class="kosong">Belum ada produk di keranjang.</td>
                     </tr>
                 </tbody>
-                <tfoot class="baris-tambah">
-                    <tr>
-                        <td colspan="5">
-                            {{-- Tambah produk: satu baris di bawah daftar isi
-                                 keranjang, bukan container terpisah. --}}
-                            <div class="tambah-produk">
-                                <div class="bidang saran-produk">
-                                    <label for="cari-produk">Cari nama atau barcode</label>
-                                    <input type="text" id="cari-produk" autocomplete="off"
-                                           placeholder="Ketik nama produk atau scan barcode...">
-                                    <div class="daftar-saran" id="daftar-saran"></div>
-                                    <div class="petunjuk" id="info-stok">Pilih produk untuk melihat sisa stok.</div>
-                                </div>
-
-                                <div class="bidang satuan-produk">
-                                    <label for="qty-produk">Jumlah</label>
-                                    <input type="number" id="qty-produk" value="1" min="1" step="1">
-                                </div>
-
-                                <button type="button" id="btn-tambah" class="tombol">+ Tambah</button>
-                            </div>
-                        </td>
-                    </tr>
-                </tfoot>
             </table>
         </div>
-
-        @if ($produk->isEmpty())
-            <div class="pesan galat" style="margin-top:16px; margin-bottom:0;">
-                Belum ada produk yang stoknya tersedia. Tambahkan produk di menu Produk &amp; Stok.
-            </div>
-        @endif
 
         <div class="papan-total" style="margin-top:16px;">
             <span class="label">Grand Total</span>
@@ -202,14 +200,6 @@
         <div class="baris-bayar">
             <span>Kembalian</span>
             <strong class="kembalian" id="teks-kembalian">Rp 0</strong>
-        </div>
-
-        <div class="flex" style="margin-bottom:12px;">
-            <button type="button" class="tombol kecil abu" data-uang="uang-pas">Uang pas</button>
-            <button type="button" class="tombol kecil abu" data-uang="5000">5.000</button>
-            <button type="button" class="tombol kecil abu" data-uang="10000">10.000</button>
-            <button type="button" class="tombol kecil abu" data-uang="50000">50.000</button>
-            <button type="button" class="tombol kecil abu" data-uang="100000">100.000</button>
         </div>
 
         <form id="form-transaksi" method="POST" action="{{ route('transaksi.store') }}">
@@ -249,7 +239,6 @@
 
     const elCari = document.getElementById('cari-produk');
     const elQty = document.getElementById('qty-produk');
-    const elInfoStok = document.getElementById('info-stok');
     const elBody = document.getElementById('isi-keranjang');
     const elTotal = document.getElementById('teks-total');
     const elBayar = document.getElementById('input-bayar');
@@ -398,23 +387,8 @@
         produkTerpilih = p;
         elCari.value = p.nama;
         sembunyikanSaran();
-        perbaruiInfoStok();
         elQty.focus();
         elQty.select();
-    }
-
-    function perbaruiInfoStok() {
-        if (!produkTerpilih) {
-            elInfoStok.textContent = 'Pilih produk untuk melihat sisa stok.';
-            return;
-        }
-
-        const diKeranjang = keranjang
-            .filter(function (item) { return item.id === produkTerpilih.id; })
-            .reduce(function (jumlah, item) { return jumlah + item.qty; }, 0);
-
-        elInfoStok.textContent = 'Sisa stok: ' + produkTerpilih.stok + ' ' + produkTerpilih.satuan
-            + (diKeranjang > 0 ? ' · sudah di keranjang: ' + diKeranjang : '');
     }
 
     /* ---------- Keranjang ---------- */
@@ -525,7 +499,6 @@
         elDiskon.value = '0';
         elMetode.value = 'tunai';
         gambarKeranjang();
-        perbaruiInfoStok();
     }
 
     /* ---------- Kejadian ---------- */
@@ -543,7 +516,6 @@
         }
 
         produkTerpilih = null;
-        perbaruiInfoStok();
         gambarSaran(daftar);
     });
 
@@ -639,7 +611,6 @@
         elQty.value = 1;
         elCari.focus();
         gambarKeranjang();
-        perbaruiInfoStok();
     });
 
     elDiskon.addEventListener('input', function () {
@@ -653,18 +624,6 @@
 
     elMetode.addEventListener('change', hitungKembalian);
     elBayar.addEventListener('input', hitungKembalian);
-
-    document.querySelectorAll('[data-uang]').forEach(function (tombol) {
-        tombol.addEventListener('click', function () {
-            if (!metodeTunai()) {
-                tampilkanPesan('Tombol nominal hanya untuk pembayaran tunai.');
-                return;
-            }
-            const nilai = tombol.dataset.uang;
-            elBayar.value = (nilai === 'uang-pas') ? total() : Number(nilai);
-            hitungKembalian();
-        });
-    });
 
     document.getElementById('form-transaksi').addEventListener('submit', function (event) {
         const nilaiTotal = total();

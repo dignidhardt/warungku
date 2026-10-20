@@ -1,13 +1,16 @@
 #!/bin/sh
 #
-# Mengosongkan data operasional tanpa menghapus akun.
+# Mengosongkan data operasional tanpa menghapus akun dan master data.
 #
 # Dipakai untuk menguji alur aplikasi dari nol: tidak ada transaksi sisa,
 # tidak ada produk contoh, tidak ada pengeluaran dari uji sebelumnya.
 #
-# Yang TIDAK dihapus: akun (admin & kasir). Kalau akun ikut terhapus, kamu
-# tidak bisa login untuk menguji alurnya — dan itu justru bagian yang mau
-# diuji.
+# Yang TIDAK dihapus:
+#   - akun (admin & kasir). Kalau akun ikut terhapus, kamu tidak bisa login
+#     untuk menguji alurnya — dan itu justru bagian yang mau diuji.
+#   - master data (kategori, satuan, satuan kemasan, supplier). Ini data
+#     konfigurasi, bukan data operasional: menghapusnya membuat form produk
+#     tidak punya pilihan sama sekali.
 #
 # AUTO_INCREMENT ikut di-reset supaya penomoran nota, pembelian, dan retur
 # mulai lagi dari 1. Tanpa itu, nomor nota berikutnya akan lompat ke angka
@@ -39,6 +42,11 @@ eksekusi_sql() {
 echo "[bersih] database: $DB_DATABASE"
 
 # Urutan penghapusan mengikuti dependensi foreign key: anak dulu, lalu induk.
+#
+# `stok` ikut dihapus: produk contoh dan produk uji adalah data operasional,
+# bukan master data. Yang dipertahankan hanya akun + master data (kategori,
+# satuan, satuan kemasan, supplier) karena itulah yang dipakai dropdown form
+# produk.
 eksekusi_sql <<'SQL'
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -66,7 +74,7 @@ ALTER TABLE stok AUTO_INCREMENT = 1;
 SET FOREIGN_KEY_CHECKS = 1;
 SQL
 
-echo "[bersih] data operasional dikosongkan (akun tetap ada)"
+echo "[bersih] data operasional dikosongkan (akun & master data tetap ada)"
 eksekusi_sql <<'SQL'
 SELECT
   (SELECT COUNT(*) FROM stok) AS produk,
@@ -76,5 +84,9 @@ SELECT
   (SELECT COUNT(*) FROM pembelians) AS pembelian,
   (SELECT COUNT(*) FROM returs) AS retur,
   (SELECT COUNT(*) FROM tutup_bukus) AS tutup_buku,
-  (SELECT COUNT(*) FROM users) AS akun;
+  (SELECT COUNT(*) FROM users) AS akun,
+  (SELECT COUNT(*) FROM kategoris) AS kategori,
+  (SELECT COUNT(*) FROM satuans) AS satuan,
+  (SELECT COUNT(*) FROM satuan_kemisans) AS satuan_kemasan,
+  (SELECT COUNT(*) FROM suppliers) AS supplier;
 SQL

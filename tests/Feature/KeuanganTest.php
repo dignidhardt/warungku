@@ -11,6 +11,7 @@ use App\Services\LaporanService;
 use App\Services\ReturService;
 use App\Services\TransaksiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\BuatMasterData;
 use Tests\TestCase;
 
 /**
@@ -24,6 +25,7 @@ use Tests\TestCase;
  */
 class KeuanganTest extends TestCase
 {
+    use BuatMasterData;
     use RefreshDatabase;
 
     private function admin(): User
@@ -38,11 +40,19 @@ class KeuanganTest extends TestCase
 
     private function produk(array $ubah = []): Stok
     {
+        // Produk butuh kategori & supplier dari master data (form produk
+        // memakai dropdown, bukan teks bebas).
+        $kategori = $this->buatKategori('Minuman');
+        $supplier = $this->buatSupplier('Toko Besar');
+        $this->buatSatuan('pcs');
+
         return Stok::create(array_merge([
             'barcode' => 'K-001',
             'nama_produk' => 'Kopi Sachet',
             'satuan' => 'pcs',
             'kategori' => 'Minuman',
+            'kategori_id' => $kategori->id,
+            'supplier_id' => $supplier->id,
             'harga_beli' => 2000,
             'harga_jual' => 3000,
             'stok' => 20,
@@ -58,7 +68,6 @@ class KeuanganTest extends TestCase
         $produk = $this->produk(['stok' => 10, 'harga_beli' => 2000]);
 
         $this->actingAs($admin)->post(route('pembelian.store'), [
-            'supplier' => 'Toko Besar',
             'tanggal' => now()->toDateString(),
             'items' => [
                 ['id' => $produk->id, 'qty' => 5, 'harga_beli' => 2500],
@@ -73,6 +82,30 @@ class KeuanganTest extends TestCase
             'stok_id' => $produk->id,
             'jumlah' => 5,
             'keterangan' => 'Pembelian '.Pembelian::first()->nomor_pembelian,
+        ]);
+    }
+
+    public function test_supplier_pembelian_diambil_dari_produk_yang_dibeli(): void
+    {
+        // Supplier tidak diketik manual lagi: sistem mengambilnya dari
+        // produk yang dipilih.
+        $admin = $this->admin();
+        $produk = $this->produk(['stok' => 10]);
+
+        $this->actingAs($admin)->post(route('pembelian.store'), [
+            'tanggal' => now()->toDateString(),
+            'items' => [
+                ['id' => $produk->id, 'qty' => 5, 'harga_beli' => 2500],
+            ],
+        ])->assertRedirect();
+
+        $pembelian = Pembelian::firstOrFail();
+
+        $this->assertSame('Toko Besar', $pembelian->supplier);
+        $this->assertDatabaseHas('pembelian_items', [
+            'pembelian_id' => $pembelian->id,
+            'stok_id' => $produk->id,
+            'supplier_id' => $produk->supplier_id,
         ]);
     }
 

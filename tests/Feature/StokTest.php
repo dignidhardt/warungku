@@ -2,14 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Models\Kategori;
 use App\Models\Stok;
 use App\Models\StokMutasi;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\BuatMasterData;
 use Tests\TestCase;
 
 class StokTest extends TestCase
 {
+    use BuatMasterData;
     use RefreshDatabase;
 
     private function admin(): User
@@ -19,11 +22,19 @@ class StokTest extends TestCase
 
     private function produk(array $ubah = []): Stok
     {
+        // Produk sekarang butuh kategori & supplier dari master data: form
+        // produk memakai dropdown, bukan teks bebas.
+        $kategori = $this->buatKategori('Minuman');
+        $supplier = $this->buatSupplier('Toko Besar');
+        $this->buatSatuan('pcs');
+
         return Stok::create(array_merge([
             'barcode' => 'BRG-001',
             'nama_produk' => 'Kopi Sachet',
             'satuan' => 'pcs',
             'kategori' => 'Minuman',
+            'kategori_id' => $kategori->id,
+            'supplier_id' => $supplier->id,
             'harga_beli' => 2000,
             'harga_jual' => 3000,
             'stok' => 10,
@@ -46,11 +57,16 @@ class StokTest extends TestCase
     {
         $admin = $this->admin();
 
+        $kategori = $this->buatKategori('Minuman');
+        $supplier = $this->buatSupplier('Toko Besar');
+        $this->buatSatuan('pcs');
+
         $this->actingAs($admin)->post(route('stok.store'), [
             'barcode' => 'BRG-999',
             'nama_produk' => 'Teh Botol',
             'satuan' => 'pcs',
-            'kategori' => 'Minuman',
+            'kategori_id' => $kategori->id,
+            'supplier_id' => $supplier->id,
             'harga_beli' => 3000,
             'harga_jual' => 5000,
             'stok' => 7,
@@ -74,11 +90,15 @@ class StokTest extends TestCase
     {
         $this->produk(['barcode' => 'SAMA-1']);
 
+        $kategori = $this->buatKategori('Snack');
+        $supplier = $this->buatSupplier('Toko Besar');
+
         $this->actingAs($this->admin())->post(route('stok.store'), [
             'barcode' => 'SAMA-1',
             'satuan' => 'pcs',
             'nama_produk' => 'Produk Lain',
-            'kategori' => 'Snack',
+            'kategori_id' => $kategori->id,
+            'supplier_id' => $supplier->id,
             'harga_beli' => 1000,
             'harga_jual' => 2000,
             'stok' => 1,
@@ -87,11 +107,15 @@ class StokTest extends TestCase
 
     public function test_harga_jual_di_bawah_harga_beli_ditolak(): void
     {
+        $kategori = $this->buatKategori('Snack');
+        $supplier = $this->buatSupplier('Toko Besar');
+
         $this->actingAs($this->admin())->post(route('stok.store'), [
             'barcode' => 'BRG-002',
             'satuan' => 'pcs',
             'nama_produk' => 'Rugi',
-            'kategori' => 'Snack',
+            'kategori_id' => $kategori->id,
+            'supplier_id' => $supplier->id,
             'harga_beli' => 5000,
             'harga_jual' => 4000,
             'stok' => 1,
@@ -102,11 +126,15 @@ class StokTest extends TestCase
     {
         $kasir = User::factory()->create(['role' => User::ROLE_KASIR]);
 
+        $kategori = $this->buatKategori('Snack');
+        $supplier = $this->buatSupplier('Toko Besar');
+
         $this->actingAs($kasir)->post(route('stok.store'), [
             'barcode' => 'BRG-003',
             'satuan' => 'pcs',
             'nama_produk' => 'Tidak Boleh',
-            'kategori' => 'Snack',
+            'kategori_id' => $kategori->id,
+            'supplier_id' => $supplier->id,
             'harga_beli' => 1000,
             'harga_jual' => 2000,
             'stok' => 1,
@@ -123,7 +151,8 @@ class StokTest extends TestCase
             'barcode' => $produk->barcode,
             'nama_produk' => 'Kopi Sachet Baru',
             'satuan' => 'pcs',
-            'kategori' => 'Minuman',
+            'kategori_id' => $produk->kategori_id,
+            'supplier_id' => $produk->supplier_id,
             'harga_beli' => 2000,
             'harga_jual' => 3500,
             'stok' => 999,
@@ -268,5 +297,84 @@ class StokTest extends TestCase
             ->assertOk()
             ->assertSee('Apel')
             ->assertDontSee('Sabun');
+    }
+
+    public function test_kategori_dan_supplier_wajib_diisi(): void
+    {
+        // Form produk memakai dropdown dari master data: kategori dan
+        // supplier wajib dipilih, tidak boleh diisi teks bebas.
+        $this->buatSatuan('pcs');
+
+        $this->actingAs($this->admin())->post(route('stok.store'), [
+            'barcode' => 'WAJIB-1',
+            'nama_produk' => 'Tanpa Kategori',
+            'satuan' => 'pcs',
+            'harga_beli' => 1000,
+            'harga_jual' => 2000,
+            'stok' => 1,
+        ])->assertSessionHasErrors(['kategori_id', 'supplier_id']);
+    }
+
+    public function test_satuan_harus_terdaftar_di_master_data(): void
+    {
+        // Satuan yang diketik bebas (mis. "kg") ditolak kalau tidak ada
+        // di master data Satuan.
+        $kategori = $this->buatKategori('Minuman');
+        $supplier = $this->buatSupplier('Toko Besar');
+
+        $this->actingAs($this->admin())->post(route('stok.store'), [
+            'barcode' => 'SAT-1',
+            'nama_produk' => 'Satuan Aneh',
+            'satuan' => 'gallon',
+            'kategori_id' => $kategori->id,
+            'supplier_id' => $supplier->id,
+            'harga_beli' => 1000,
+            'harga_jual' => 2000,
+            'stok' => 1,
+        ])->assertSessionHasErrors('satuan');
+    }
+
+    public function test_kode_barang_otomatis_dari_kategori(): void
+    {
+        // Kategori "AAA" -> produk pertama di kategori itu dapat "AAA-001",
+        // produk kedua "AAA-002".
+        $kategori = Kategori::create(['nama' => 'Minuman Set', 'kode_barang' => 'AAA']);
+        $supplier = $this->buatSupplier('Toko Besar');
+        $this->buatSatuan('pcs');
+
+        $this->assertSame('AAA-001', Stok::kodeBarangOtomatis($kategori));
+
+        $this->actingAs($this->admin())->post(route('stok.store'), [
+            'barcode' => 'AAA-001',
+            'nama_produk' => 'Produk Pertama',
+            'satuan' => 'pcs',
+            'kategori_id' => $kategori->id,
+            'supplier_id' => $supplier->id,
+            'harga_beli' => 1000,
+            'harga_jual' => 2000,
+            'stok' => 1,
+        ])->assertRedirect(route('stok.index'));
+
+        $this->assertSame('AAA-002', Stok::kodeBarangOtomatis($kategori));
+    }
+
+    public function test_halaman_tambah_produk_menampilkan_dropdown_dari_master_data(): void
+    {
+        $kategori = $this->buatKategori('Minuman');
+        $supplier = $this->buatSupplier('Toko Besar');
+        $this->buatSatuan('pcs');
+
+        $html = $this->actingAs($this->admin())->get(route('stok.create'))->assertOk()->getContent();
+
+        // Opsi kategori & supplier harus ada di dalam <select>.
+        $this->assertStringContainsString('value="'.$kategori->id.'"', $html);
+        $this->assertStringContainsString('value="'.$supplier->id.'"', $html);
+        $this->assertStringContainsString('Minuman ('.$kategori->kode_barang, $html);
+        $this->assertStringContainsString('Toko Besar ('.$supplier->kode, $html);
+
+        // Input teks kustom tidak boleh ada: kategori & satuan wajib lewat
+        // dropdown.
+        $this->assertStringNotContainsString('name="kategori"', $html);
+        $this->assertStringNotContainsString('list="daftar-kategori"', $html);
     }
 }

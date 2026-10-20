@@ -25,6 +25,7 @@
                 <thead>
                     <tr>
                         <th>Barang</th>
+                        <th>Supplier</th>
                         <th class="angka">Qty</th>
                         <th class="angka">Harga Beli</th>
                         <th class="angka">Subtotal</th>
@@ -34,6 +35,7 @@
                     @foreach ($pembelian->items as $item)
                         <tr>
                             <td>{{ $item->produk->nama_produk ?? $item->stok_id }}</td>
+                            <td class="kecil">{{ $item->supplier?->nama ?? '—' }}</td>
                             <td class="angka">{{ $item->qty }}</td>
                             <td class="angka">Rp {{ number_format($item->harga_beli, 0, ',', '.') }}</td>
                             <td class="angka">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
@@ -42,7 +44,7 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3" class="kanan"><strong>Total</strong></td>
+                        <td colspan="4" class="kanan"><strong>Total</strong></td>
                         <td class="angka"><strong>Rp {{ number_format($pembelian->total, 0, ',', '.') }}</strong></td>
                     </tr>
                 </tfoot>

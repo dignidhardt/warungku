@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Stok extends Model
@@ -21,6 +22,8 @@ class Stok extends Model
         'satuan_kemasan',
         'isi_kemasan',
         'kategori',
+        'kategori_id',
+        'supplier_id',
         'harga_beli',
         'harga_jual',
         'stok',
@@ -46,6 +49,68 @@ class Stok extends Model
     public function pembelianItems(): HasMany
     {
         return $this->hasMany(PembelianItem::class, 'stok_id');
+    }
+
+    public function kategori(): BelongsTo
+    {
+        return $this->belongsTo(Kategori::class, 'kategori_id');
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    /**
+     * Nama kategori untuk ditampilkan.
+     *
+     * Preferensi ke relasi `kategori` (data baru), dengan fallback ke kolom
+     * teks `kategori` (data lama yang belum sempat ditautkan).
+     */
+    public function getNamaKategoriAttribute(): string
+    {
+        return $this->kategori?->nama ?? ($this->kategori ?: '—');
+    }
+
+    /**
+     * Nama supplier untuk ditampilkan.
+     */
+    public function getNamaSupplierAttribute(): string
+    {
+        return $this->supplier?->nama ?? '—';
+    }
+
+    /**
+     * Kode Barang otomatis untuk produk dalam kategori tertentu.
+     *
+     * Format: "<Kode Barang kategori>-<nomor urut 3 digit>", mis. "AAA-001".
+     * Nomor urut dihitung dari produk yang SUDAH ada di kategori itu, jadi
+     * produk pertama di kategori "AAA" mendapat "AAA-001".
+     *
+     * Admin tetap boleh mengubah sendiri nilainya di form.
+     */
+    public static function kodeBarangOtomatis(?Kategori $kategori): string
+    {
+        if (! $kategori) {
+            return '';
+        }
+
+        $awalan = $kategori->awalanKodeBarang();
+
+        $tertinggi = 0;
+
+        $produk = static::query()
+            ->where('kategori_id', $kategori->id)
+            ->where('barcode', 'like', $awalan.'-%')
+            ->get(['barcode']);
+
+        foreach ($produk as $item) {
+            if (preg_match('/'.preg_quote($awalan, '/').'-(\d+)$/', (string) $item->barcode, $cocok)) {
+                $tertinggi = max($tertinggi, (int) $cocok[1]);
+            }
+        }
+
+        return $awalan.'-'.str_pad((string) ($tertinggi + 1), 3, '0', STR_PAD_LEFT);
     }
 
     /**

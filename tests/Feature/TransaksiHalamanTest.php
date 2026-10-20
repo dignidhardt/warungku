@@ -46,29 +46,34 @@ class TransaksiHalamanTest extends TestCase
             ->assertSee('Belum ada produk yang stoknya tersedia');
     }
 
-    public function test_halaman_kasir_tunggal_kolom_tanpa_container_pilih_produk(): void
+    public function test_halaman_kasir_tunggal_kolom_dengan_pilih_produk_di_atas_keranjang(): void
     {
-        // Halaman kasir harus satu kolom: container "Pilih Produk" sudah
-        // dihapus dan_INPUT_ produk/qty dipindah ke dalam baris tabel
-        // keranjang.
+        // Halaman kasir satu kolom: card "Pilih Produk" (dropdown + jumlah)
+        // di ATAS card "Keranjang". Tidak ada lagi grid dua kolom.
         $kasir = User::factory()->create(['role' => User::ROLE_KASIR]);
 
         $html = $this->actingAs($kasir)->get(route('transaksi.index'))->assertOk()->getContent();
 
         $this->assertStringNotContainsString('kasir-grid', $html, 'Kasir harus satu kolom, bukan grid dua kolom.');
-        $this->assertStringNotContainsString('Pilih Produk', $html, 'Container "Pilih Produk" harus dihapus.');
         $this->assertStringContainsString('Keranjang', $html);
 
-        // Input produk & jumlah harus berada DI DALAM tabel keranjang,
-        // yaitu setelah baris "PRODUK" dan sebelum penutup tabel.
-        $posisiTabel = strpos($html, 'id="tabel-keranjang"');
-        $posisiInput = strpos($html, 'id="cari-produk"');
-        $posisiTutup = strpos($html, '</table>');
+        // Urutan: "Pilih Produk" harus muncul sebelum "Keranjang".
+        $posisiPilih = strpos($html, 'Pilih Produk');
+        $posisiKeranjang = strpos($html, '>Keranjang<');
 
-        $this->assertNotFalse($posisiTabel);
-        $this->assertNotFalse($posisiInput);
-        $this->assertGreaterThan($posisiTabel, $posisiInput, 'Input produk harus di dalam tabel keranjang.');
-        $this->assertLessThan($posisiTutup, $posisiInput, 'Input produk harus di dalam tabel keranjang.');
+        $this->assertNotFalse($posisiPilih);
+        $this->assertNotFalse($posisiKeranjang);
+        $this->assertLessThan(
+            $posisiKeranjang,
+            $posisiPilih,
+            'Card "Pilih Produk" harus di atas card "Keranjang".'
+        );
+
+        // Placeholder lama & tombol nominal harus hilang.
+        $this->assertStringNotContainsString('Ketik nama produk atau scan barcode', $html);
+        $this->assertStringNotContainsString('Pilih produk untuk melihat sisa stok', $html);
+        $this->assertStringNotContainsString('data-uang', $html);
+        $this->assertStringNotContainsString('Uang pas', $html);
     }
 
     public function test_semua_halaman_utama_pakai_wadah_lebar_tetap(): void

@@ -4,8 +4,10 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KeuanganController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PembelianController;
 use App\Http\Controllers\StokController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\IsAdmin;
@@ -106,6 +108,30 @@ Route::middleware('auth')->group(function () {
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // ---------- Master data: kategori, satuan, satuan kemasan ----------
+        Route::get('/master/kategori', [MasterDataController::class, 'kategori'])->name('master.kategori');
+        Route::post('/master/kategori', [MasterDataController::class, 'simpanKategori'])->name('master.kategori.simpan');
+        Route::put('/master/kategori/{kategori}', [MasterDataController::class, 'ubahKategori'])->name('master.kategori.ubah');
+        Route::delete('/master/kategori/{kategori}', [MasterDataController::class, 'hapusKategori'])->name('master.kategori.hapus');
+
+        Route::get('/master/satuan', [MasterDataController::class, 'satuan'])->name('master.satuan');
+        Route::post('/master/satuan', [MasterDataController::class, 'simpanSatuan'])->name('master.satuan.simpan');
+        Route::put('/master/satuan/{satuan}', [MasterDataController::class, 'ubahSatuan'])->name('master.satuan.ubah');
+        Route::delete('/master/satuan/{satuan}', [MasterDataController::class, 'hapusSatuan'])->name('master.satuan.hapus');
+
+        Route::get('/master/satuan-kemasan', [MasterDataController::class, 'satuanKemasan'])->name('master.satuan-kemasan');
+        Route::post('/master/satuan-kemasan', [MasterDataController::class, 'simpanSatuanKemasan'])->name('master.satuan-kemasan.simpan');
+        Route::put('/master/satuan-kemasan/{satuanKemasan}', [MasterDataController::class, 'ubahSatuanKemasan'])->name('master.satuan-kemasan.ubah');
+        Route::delete('/master/satuan-kemasan/{satuanKemasan}', [MasterDataController::class, 'hapusSatuanKemasan'])->name('master.satuan-kemasan.hapus');
+
+        // ---------- Supplier ----------
+        Route::get('/supplier', [SupplierController::class, 'index'])->name('master.supplier');
+        Route::get('/supplier/create', [SupplierController::class, 'create'])->name('master.supplier.create');
+        Route::post('/supplier', [SupplierController::class, 'store'])->name('master.supplier.store');
+        Route::get('/supplier/{supplier}/edit', [SupplierController::class, 'edit'])->name('master.supplier.edit');
+        Route::put('/supplier/{supplier}', [SupplierController::class, 'update'])->name('master.supplier.update');
+        Route::delete('/supplier/{supplier}', [SupplierController::class, 'destroy'])->name('master.supplier.hapus');
 
         // Produk: rute statis dulu, baru yang berparameter.
         Route::get('/stok/create', [StokController::class, 'create'])->name('stok.create');

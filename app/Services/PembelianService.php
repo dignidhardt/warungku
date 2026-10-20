@@ -27,7 +27,6 @@ class PembelianService
      */
     public function simpan(
         array $items,
-        ?string $supplier,
         string $tanggal,
         ?string $keterangan,
         ?User $oleh = null
@@ -36,12 +35,13 @@ class PembelianService
             throw new RuntimeException('Belum ada barang yang dibeli.');
         }
 
-        return DB::transaction(function () use ($items, $supplier, $tanggal, $keterangan, $oleh) {
+        return DB::transaction(function () use ($items, $tanggal, $keterangan, $oleh) {
             $total = 0;
             $baris = [];
             $produkTerkunci = [];
 
             $terkunci = Stok::whereIn('id', array_column($items, 'id'))
+                ->with('supplier')
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
@@ -74,6 +74,10 @@ class PembelianService
 
                 $baris[] = [
                     'stok_id' => $produk->id,
+                    // Supplier diambil dari produk yang dibeli, bukan diketik
+                    // manual: satu pembelian bisa berisi barang dari beberapa
+                    // supplier berbeda.
+                    'supplier_id' => $produk->supplier_id,
                     'qty' => $qtyDasar,
                     'harga_beli' => $hargaBeli,
                     'subtotal' => $subtotal,
@@ -82,9 +86,17 @@ class PembelianService
                 $produkTerkunci[] = [$produk, $qtyDasar, $hargaBeli];
             }
 
+            // Ringkasan supplier untuk header pembelian: nama supplier yang
+            // muncul di baris pembelian ini.
+            $namaSupplier = collect($baris)
+                ->map(fn ($b) => $terkunci->get($b['stok_id'])?->nama_supplier)
+                ->filter(fn ($nama) => $nama && $nama !== '—')
+                ->unique()
+                ->implode(', ');
+
             $pembelian = Pembelian::create([
                 'nomor_pembelian' => $this->nomorBaru(),
-                'supplier' => $supplier,
+                'supplier' => $namaSupplier !== '' ? $namaSupplier : null,
                 'tanggal' => $tanggal,
                 'total' => $total,
                 'keterangan' => $keterangan,

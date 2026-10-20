@@ -157,6 +157,17 @@ body {
     min-width: 0;
 }
 
+/* ---------- Lebar konten ---------- */
+/* Semua halaman utama dibungkus .lebar-tetap supaya lebarnya seragam di
+   desktop dan ponsel: tidak melar mengikuti ukuran layar, dan tidak
+   menyempit jadi kolom pendek di layar besar. */
+.lebar-tetap {
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* ---------- Komponen ---------- */
 .kartu {
     background: var(--putih);
@@ -214,6 +225,14 @@ body {
 .statistik.hijau { border-left-color: var(--hijau); }
 .statistik.kuning { border-left-color: var(--kuning); }
 .statistik.merah { border-left-color: var(--merah); }
+
+/* Kartu statistik yang diletakkan DI DALAM container lain: bayangannya
+   sendiri tidak perlu karena sudah ada bayangan container luarnya. Tanpa
+   ini cards-nya putih di atas putih dan terlihat seperti tidak ada. */
+.kartu .statistik {
+    background: #f8fafc;
+    box-shadow: none;
+}
 
 .statistik .label {
     font-size: 11px;
@@ -546,4 +565,23 @@ table.tabel tfoot td {
         box-shadow: 2px 0 10px rgba(0, 0, 0, .2);
     }
     .sidebar.tutup { width: 0; }
+
+    /* Menu tertutup secara default di layar kecil: kalau dibiarkan terbuka,
+       menu menutupi ~70% isi halaman dan halaman jadi tidak bisa dibaca
+       sampai pengguna menekan tombol hamburger. */
+    .sidebar:not(.terbuka) { width: 0; padding: 0; }
+
+    /* Tirai gelap muncul hanya saat menu dibuka. */
+    .tirai-sidebar {
+        position: fixed;
+        inset: 60px 0 0 0;
+        background: rgba(15, 23, 42, .45);
+        z-index: 14;
+    }
+    .tirai-sidebar[hidden] { display: none; }
+}
+
+/* Layar lebar: tirai tidak dipakai sama sekali. */
+@media (min-width: 721px) {
+    .tirai-sidebar { display: none !important; }
 }

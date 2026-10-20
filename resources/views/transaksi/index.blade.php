@@ -4,15 +4,6 @@
 
 @push('gaya')
 <style>
-    .kasir-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-        gap: 18px;
-        align-items: start;
-    }
-    @media (max-width: 980px) {
-        .kasir-grid { grid-template-columns: 1fr; }
-    }
     .papan-total {
         background: #0f172a;
         color: #6ee7b7;
@@ -70,16 +61,30 @@
     .petunjuk { font-size: 12px; color: var(--abu); margin-top: 5px; }
     .pesan-kasir { margin-bottom: 14px; }
 
-    /* Saran pencarian produk: replaces datalist, which is awkward on a phone. */
+    /* Baris tambah produk: tempel langsung di bawah daftar isi keranjang. */
+    .tambah-produk {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+    .tambah-produk .bidang { margin-bottom: 0; }
+    .tambah-produk .saran-produk { flex: 1 1 240px; min-width: 0; }
+    .tambah-produk .satuan-produk { flex: 0 0 92px; }
+    .tambah-produk input { height: 38px; }
+    .tambah-produk .tombol { height: 38px; flex: 0 0 auto; }
+    .baris-tambah td { border-top: 2px solid var(--garis); }
+    .baris-tambah label { margin-bottom: 4px; }
+
+    /* Saran pencarian produk: replaces datalist, which is awkward on a phone.
+       Dipakai `position: fixed` supaya tidak ikut terpotong kotak tabel
+       (tabel ada di dalam wadah yang bisa digulir). */
     .saran-produk {
         position: relative;
     }
     .daftar-saran {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        z-index: 30;
+        position: fixed;
+        z-index: 60;
         background: #fff;
         border: 1px solid var(--garis);
         border-radius: 8px;
@@ -118,106 +123,105 @@
     {{-- Tempat pesan dari JS: satu wadah, bukan alert() yang memblokir. --}}
     <div id="pesan-kasir"></div>
 
-    <div class="kasir-grid">
+    <div class="kartu">
+        <h3>Keranjang</h3>
 
-        {{-- ---------- Kiri: pilih produk ---------- --}}
-        <div class="kartu">
-            <h3>Pilih Produk</h3>
+        <div class="tabel-bungkus">
+            <table class="tabel tabel-keranjang" id="tabel-keranjang">
+                <thead>
+                    <tr>
+                        <th>Produk</th>
+                        <th class="angka">Harga</th>
+                        <th class="tengah">Qty</th>
+                        <th class="angka">Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="isi-keranjang">
+                    <tr id="baris-kosong">
+                        <td colspan="5" class="kosong">Belum ada produk di keranjang.</td>
+                    </tr>
+                </tbody>
+                <tfoot class="baris-tambah">
+                    <tr>
+                        <td colspan="5">
+                            {{-- Tambah produk: satu baris di bawah daftar isi
+                                 keranjang, bukan container terpisah. --}}
+                            <div class="tambah-produk">
+                                <div class="bidang saran-produk">
+                                    <label for="cari-produk">Cari nama atau barcode</label>
+                                    <input type="text" id="cari-produk" autocomplete="off"
+                                           placeholder="Ketik nama produk atau scan barcode...">
+                                    <div class="daftar-saran" id="daftar-saran"></div>
+                                    <div class="petunjuk" id="info-stok">Pilih produk untuk melihat sisa stok.</div>
+                                </div>
 
-            <div class="bidang saran-produk">
-                <label for="cari-produk">Cari nama atau barcode</label>
-                <input type="text" id="cari-produk" autocomplete="off"
-                       placeholder="Ketik nama produk atau scan barcode...">
-                <div class="daftar-saran" id="daftar-saran"></div>
-                <div class="petunjuk">Scanner barcode akan langsung mengisi kolom ini.</div>
-            </div>
+                                <div class="bidang satuan-produk">
+                                    <label for="qty-produk">Jumlah</label>
+                                    <input type="number" id="qty-produk" value="1" min="1" step="1">
+                                </div>
 
-            <div class="bidang">
-                <label for="qty-produk">Jumlah</label>
-                <input type="number" id="qty-produk" value="1" min="1" step="1">
-                <div class="petunjuk" id="info-stok">Pilih produk untuk melihat sisa stok.</div>
-            </div>
-
-            <button type="button" id="btn-tambah" class="tombol blok">+ Tambahkan ke Keranjang</button>
-
-            @if ($produk->isEmpty())
-                <div class="pesan galat" style="margin-top:16px; margin-bottom:0;">
-                    Belum ada produk yang stoknya tersedia. Tambahkan produk di menu Produk &amp; Stok.
-                </div>
-            @endif
+                                <button type="button" id="btn-tambah" class="tombol">+ Tambah</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
 
-        {{-- ---------- Kanan: keranjang & pembayaran ---------- --}}
-        <div class="kartu">
-            <h3>Keranjang</h3>
-
-            <div class="tabel-bungkus">
-                <table class="tabel tabel-keranjang" id="tabel-keranjang">
-                    <thead>
-                        <tr>
-                            <th>Produk</th>
-                            <th class="angka">Harga</th>
-                            <th class="tengah">Qty</th>
-                            <th class="angka">Subtotal</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr id="baris-kosong">
-                            <td colspan="5" class="kosong">Belum ada produk di keranjang.</td>
-                        </tr>
-                    </tbody>
-                </table>
+        @if ($produk->isEmpty())
+            <div class="pesan galat" style="margin-top:16px; margin-bottom:0;">
+                Belum ada produk yang stoknya tersedia. Tambahkan produk di menu Produk &amp; Stok.
             </div>
+        @endif
 
-            <div class="papan-total" style="margin-top:16px;">
-                <span class="label">Grand Total</span>
-                <strong id="teks-total">Rp 0</strong>
-            </div>
-
-            <div class="baris-bayar">
-                <label for="input-diskon">Diskon (Rp)</label>
-                <input type="number" id="input-diskon" min="0" step="500" value="0" placeholder="0">
-            </div>
-
-            <div class="baris-bayar">
-                <label for="input-metode">Metode Bayar</label>
-                <select id="input-metode">
-                    @foreach ($metode as $nilai => $label)
-                        <option value="{{ $nilai }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="baris-bayar">
-                <label for="input-bayar">Uang Diterima</label>
-                <input type="number" id="input-bayar" min="0" step="1000" placeholder="0">
-            </div>
-
-            <div class="baris-bayar">
-                <span>Kembalian</span>
-                <strong class="kembalian" id="teks-kembalian">Rp 0</strong>
-            </div>
-
-            <div class="flex" style="margin-bottom:12px;">
-                <button type="button" class="tombol kecil abu" data-uang="uang-pas">Uang pas</button>
-                <button type="button" class="tombol kecil abu" data-uang="5000">5.000</button>
-                <button type="button" class="tombol kecil abu" data-uang="10000">10.000</button>
-                <button type="button" class="tombol kecil abu" data-uang="50000">50.000</button>
-                <button type="button" class="tombol kecil abu" data-uang="100000">100.000</button>
-            </div>
-
-            <form id="form-transaksi" method="POST" action="{{ route('transaksi.store') }}">
-                @csrf
-                <input type="hidden" name="keranjang" id="input-keranjang">
-                <input type="hidden" name="bayar" id="input-bayar-hidden">
-                <input type="hidden" name="diskon" id="input-diskon-hidden">
-                <input type="hidden" name="metode_bayar" id="input-metode-hidden">
-                <button type="submit" class="tombol hijau blok" id="btn-simpan" disabled>
-                    Simpan &amp; Cetak Struk
-                </button>
-            </form>
+        <div class="papan-total" style="margin-top:16px;">
+            <span class="label">Grand Total</span>
+            <strong id="teks-total">Rp 0</strong>
         </div>
+
+        <div class="baris-bayar">
+            <label for="input-diskon">Diskon (Rp)</label>
+            <input type="number" id="input-diskon" min="0" step="500" value="0" placeholder="0">
+        </div>
+
+        <div class="baris-bayar">
+            <label for="input-metode">Metode Bayar</label>
+            <select id="input-metode">
+                @foreach ($metode as $nilai => $label)
+                    <option value="{{ $nilai }}">{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="baris-bayar">
+            <label for="input-bayar">Uang Diterima</label>
+            <input type="number" id="input-bayar" min="0" step="1000" placeholder="0">
+        </div>
+
+        <div class="baris-bayar">
+            <span>Kembalian</span>
+            <strong class="kembalian" id="teks-kembalian">Rp 0</strong>
+        </div>
+
+        <div class="flex" style="margin-bottom:12px;">
+            <button type="button" class="tombol kecil abu" data-uang="uang-pas">Uang pas</button>
+            <button type="button" class="tombol kecil abu" data-uang="5000">5.000</button>
+            <button type="button" class="tombol kecil abu" data-uang="10000">10.000</button>
+            <button type="button" class="tombol kecil abu" data-uang="50000">50.000</button>
+            <button type="button" class="tombol kecil abu" data-uang="100000">100.000</button>
+        </div>
+
+        <form id="form-transaksi" method="POST" action="{{ route('transaksi.store') }}">
+            @csrf
+            <input type="hidden" name="keranjang" id="input-keranjang">
+            <input type="hidden" name="bayar" id="input-bayar-hidden">
+            <input type="hidden" name="diskon" id="input-diskon-hidden">
+            <input type="hidden" name="metode_bayar" id="input-metode-hidden">
+            <button type="submit" class="tombol hijau blok" id="btn-simpan" disabled>
+                Simpan &amp; Cetak Struk
+            </button>
+        </form>
     </div>
 @endsection
 
@@ -246,7 +250,7 @@
     const elCari = document.getElementById('cari-produk');
     const elQty = document.getElementById('qty-produk');
     const elInfoStok = document.getElementById('info-stok');
-    const elBody = document.querySelector('#tabel-keranjang tbody');
+    const elBody = document.getElementById('isi-keranjang');
     const elTotal = document.getElementById('teks-total');
     const elBayar = document.getElementById('input-bayar');
     const elDiskon = document.getElementById('input-diskon');
@@ -362,7 +366,19 @@
             wadahSaran.appendChild(item);
         });
 
+        posisikanSaran();
         wadahSaran.classList.add('aktif');
+    }
+
+    /* Daftar saran memakai `position: fixed`, jadi posisinya dihitung dari
+       kotak layar input, bukan dari kotak dokumen. Kalau tidak, daftar ini
+       akan muncul jauh dari inputnya saat halaman digulir. */
+    function posisikanSaran() {
+        const kotak = elCari.getBoundingClientRect();
+
+        wadahSaran.style.left = kotak.left + 'px';
+        wadahSaran.style.top = (kotak.bottom + 4) + 'px';
+        wadahSaran.style.width = kotak.width + 'px';
     }
 
     function sembunyikanSaran() {
@@ -564,6 +580,20 @@
     document.addEventListener('click', function (event) {
         if (!event.target.closest('.saran-produk')) {
             sembunyikanSaran();
+        }
+    });
+
+    // Posisi daftar saran mengikuti input saat halaman digulir atau jendela
+    // diubah ukurannya.
+    window.addEventListener('scroll', function () {
+        if (wadahSaran.classList.contains('aktif')) {
+            posisikanSaran();
+        }
+    }, true);
+
+    window.addEventListener('resize', function () {
+        if (wadahSaran.classList.contains('aktif')) {
+            posisikanSaran();
         }
     });
 

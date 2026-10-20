@@ -14,19 +14,24 @@
         @endif
     </div>
 
-    <div class="baris-statistik">
-        <div class="statistik merah">
-            <div class="label">Stok Habis</div>
-            <div class="nilai">{{ $totalHabis }} <span class="satuan">produk</span></div>
-        </div>
-        <div class="statistik kuning">
-            <div class="label">Stok Menipis</div>
-            <div class="nilai">{{ $totalMenipis }} <span class="satuan">produk</span></div>
-        </div>
-    </div>
-
+    {{-- Semua isi halaman dibalut dalam satu container "Stok": filter,
+         ringkasan, dan tabel produk tidak lagi tersebar di beberapa
+         container terpisah. --}}
     <div class="kartu">
-        <form action="{{ route('stok.index') }}" method="GET" class="baris-filter">
+        <h2>Stok</h2>
+
+        <div class="baris-statistik">
+            <div class="statistik merah">
+                <div class="label">Stok Habis</div>
+                <div class="nilai">{{ $totalHabis }} <span class="satuan">produk</span></div>
+            </div>
+            <div class="statistik kuning">
+                <div class="label">Stok Menipis</div>
+                <div class="nilai">{{ $totalMenipis }} <span class="satuan">produk</span></div>
+            </div>
+        </div>
+
+        <form action="{{ route('stok.index') }}" method="GET" class="baris-filter" style="margin-bottom:18px;">
             <div class="bidang cari">
                 <label for="cari">Cari produk</label>
                 <input type="text" id="cari" name="cari" value="{{ $keyword }}"
@@ -48,9 +53,7 @@
                 <a href="{{ route('stok.index') }}" class="tombol abu">Reset</a>
             @endif
         </form>
-    </div>
 
-    <div class="kartu">
         <div class="tabel-bungkus">
             <table class="tabel">
                 <thead>
@@ -116,6 +119,65 @@
         <div class="paginasi">
             <span>Menampilkan {{ $produk->firstItem() ?? 0 }}–{{ $produk->lastItem() ?? 0 }} dari {{ $produk->total() }} produk</span>
             <div class="tautan">{{ $produk->links('pagination::warungku') }}</div>
+        </div>
+    </div>
+
+    {{-- Riwayat seluruh movements stok masuk dan keluar. --}}
+    <div class="kartu">
+        <h2>Riwayat Stok</h2>
+        <p class="kecil redup" style="margin-bottom:16px;">
+            Semua stok masuk dan stok keluar yang terjadi, dari yang terbaru.
+        </p>
+
+        <div class="tabel-bungkus">
+            <table class="tabel">
+                <thead>
+                    <tr>
+                        <th>Waktu</th>
+                        <th>Produk</th>
+                        <th class="tengah">Jenis</th>
+                        <th class="tengah">Jumlah</th>
+                        <th class="tengah">Stok Sesudah</th>
+                        <th>Keterangan</th>
+                        <th>Oleh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($mutasis as $mutasi)
+                        <tr>
+                            <td class="kecil">{{ $mutasi->created_at->format('d/m/Y H:i') }}</td>
+                            <td>{{ $mutasi->produk->nama_produk ?? '—' }}</td>
+                            <td class="tengah">
+                                @php
+                                    $warnaJenis = [
+                                        'masuk' => 'hijau',
+                                        'keluar' => 'merah',
+                                        'penyesuaian' => 'kuning',
+                                    ][$mutasi->jenis] ?? 'abu';
+                                @endphp
+                                <span class="lencana {{ $warnaJenis }}">{{ $mutasi->label }}</span>
+                            </td>
+                            <td class="tengah">
+                                <strong>
+                                    {{ $mutasi->jenis === 'keluar' ? '−' : '+' }}{{ $mutasi->jumlah }}
+                                </strong>
+                            </td>
+                            <td class="tengah">{{ $mutasi->stok_sesudah }}</td>
+                            <td class="kecil">{{ $mutasi->keterangan ?? '—' }}</td>
+                            <td class="kecil">{{ $mutasi->user->name ?? '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="kosong">Belum ada riwayat stok masuk atau keluar.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="paginasi">
+            <span>Menampilkan {{ $mutasis->firstItem() ?? 0 }}–{{ $mutasis->lastItem() ?? 0 }} dari {{ $mutasis->total() }} riwayat</span>
+            <div class="tautan">{{ $mutasis->links('pagination::warungku') }}</div>
         </div>
     </div>
 @endsection

@@ -9,6 +9,11 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Ditambahkan
 
+- **Riwayat Stok** di halaman Produk & Stok: container baru berisi seluruh
+  catatan "Stok Masuk" dan "Stok Keluar" beserta produknya, jumlah, stok
+  sesudahnya, keterangan, dan siapa yang melakukan. Paginasi riwayat
+  terpisah dari daftar produk (`pageMutasi` vs `pageProduk`) supaya
+  menggulir riwayat tidak menggeser halaman daftar produk.
 - **Manajemen keuangan**: pencatatan pembelian ke supplier, pengeluaran
   operasional (listrik, transport, dll), dan prive (pengambilan uang pribadi
   pemilik) yang dipisah dari biaya usaha.
@@ -30,6 +35,17 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Diubah
 
+- **Lebar konten seragam di semua halaman utama** (Kasir, Riwayat Transaksi,
+  Produk & Stok, Laporan, Tutup Buku): seluruh isi dibungkus satu wadah
+  `.lebar-tetap` dengan lebar maksimum 1200px dan dipusatkan. Sebelumnya
+  konten melebar mengikuti ukuran layar, sehingga di monitor besar muncul
+  ruang kosong yang lebar di sisi kanan halaman.
+- **Halaman Kasir jadi satu kolom**: container "Pilih Produk" dihapus dan
+  input pencarian produk + jumlah dipindahkan ke dalam baris `<tfoot>` tabel
+  keranjang, tepat di bawah daftar "PRODUK". Satu baris, satu kartu.
+- **Halaman Produk & Stok dibalut dalam satu container "Stok"**: ringkasan
+  stok habis/menipis, filter, dan tabel produk kini berada dalam satu
+  kartu, bukan tersebar di beberapa container terpisah.
 - `composer.json` memakai nama dan deskripsi proyek yang sebenarnya, bukan
   lagi metadata skeleton Laravel.
 - Seeder mencatat stok awal sebagai mutasi stok, bukan menulis kolom langsung,
@@ -44,6 +60,15 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Diperbaiki
 
+- **Menu navigasi menutupi isi halaman di layar ponsel**. Sidebar di bawah
+  721px menjadi menu slide-in, tapi tidak pernah disembunyikan secara default,
+  jadi ~70% halaman tertutup dan tidak bisa dibaca sampai tombol hamburger
+  ditekan. Sekarang menu tertutup secara default, muncul dengan tirai gelap
+  di belakangnya, dan tertutup lagi saat menu dipilih atau tirai diklik.
+- **Daftar saran produk di kasir terpotong** setelah input produk dipindah
+  ke dalam tabel keranjang. Daftar saran memakai `position: fixed` dengan
+  posisi dihitung dari kotak layar input, jadi tetap menempel di bawah
+  input meski halaman digulir.
 - Halaman **Kasir 500** karena directive Blade salah sintaks. Daftar produk
   dirakit langsung di view dengan `@json($produk->map(fn ($p) => [...]))`;
   Blade mengurai `=>` dan `[` sebagai directive-nya sendiri sehingga hasilnya

@@ -197,4 +197,76 @@ class StokTest extends TestCase
             ->assertSee('Kopi Sachet')
             ->assertDontSee('Sabun Mandi');
     }
+
+    public function test_halaman_stok_menampilkan_riwayat_stok_masuk_dan_keluar(): void
+    {
+        $produk = $this->produk(['stok' => 10]);
+
+        StokMutasi::create([
+            'stok_id' => $produk->id,
+            'jenis' => StokMutasi::JENIS_MASUK,
+            'jumlah' => 10,
+            'stok_sesudah' => 10,
+            'keterangan' => 'Stok awal produk',
+        ]);
+
+        StokMutasi::create([
+            'stok_id' => $produk->id,
+            'jenis' => StokMutasi::JENIS_KELUAR,
+            'jumlah' => 3,
+            'stok_sesudah' => 7,
+            'keterangan' => 'Penjualan TRX-1',
+        ]);
+
+        $html = $this->actingAs($this->admin())->get(route('stok.index'))->assertOk()->getContent();
+
+        // Dua container: "Stok" (daftar produk) dan "Riwayat Stok" (mutasi).
+        $this->assertStringContainsString('>Stok<', $html);
+        $this->assertStringContainsString('>Riwayat Stok<', $html);
+
+        // Kedua jenis mutasi harus muncul di riwayat.
+        $this->assertStringContainsString('Masuk', $html);
+        $this->assertStringContainsString('Keluar', $html);
+        $this->assertStringContainsString('Penjualan TRX-1', $html);
+    }
+
+    public function test_riwayat_stok_kosong_tetap_merender_tanpa_error(): void
+    {
+        $this->produk();
+
+        $this->actingAs($this->admin())
+            ->get(route('stok.index'))
+            ->assertOk()
+            ->assertSee('Riwayat Stok');
+    }
+
+    public function test_paginasi_produk_dan_riwayat_stok_terpisah(): void
+    {
+        // Dua tabel di satu halaman harus punya parameter paginasi sendiri.
+        // Kalau tidak, menggulir riwayat stok akan menggeser halaman daftar
+        // produk.
+        $this->produk();
+
+        $response = $this->actingAs($this->admin())->get(route('stok.index'))->assertOk();
+
+        $response->assertViewHas('produk', function ($produk) {
+            return $produk->getPageName() === 'pageProduk';
+        });
+
+        $response->assertViewHas('mutasis', function ($mutasis) {
+            return $mutasis->getPageName() === 'pageMutasi';
+        });
+    }
+
+    public function test_filter_produk_tetap_berlaku_saat_riwayat_stok_dibuka(): void
+    {
+        $apel = $this->produk(['barcode' => 'F-1', 'nama_produk' => 'Apel']);
+        $sabon = $this->produk(['barcode' => 'F-2', 'nama_produk' => 'Sabun']);
+
+        $this->actingAs($this->admin())
+            ->get(route('stok.index', ['cari' => 'Apel']))
+            ->assertOk()
+            ->assertSee('Apel')
+            ->assertDontSee('Sabun');
+    }
 }

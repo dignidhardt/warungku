@@ -46,6 +46,75 @@ class TransaksiHalamanTest extends TestCase
             ->assertSee('Belum ada produk yang stoknya tersedia');
     }
 
+    public function test_halaman_kasir_tunggal_kolom_tanpa_container_pilih_produk(): void
+    {
+        // Halaman kasir harus satu kolom: container "Pilih Produk" sudah
+        // dihapus dan_INPUT_ produk/qty dipindah ke dalam baris tabel
+        // keranjang.
+        $kasir = User::factory()->create(['role' => User::ROLE_KASIR]);
+
+        $html = $this->actingAs($kasir)->get(route('transaksi.index'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('kasir-grid', $html, 'Kasir harus satu kolom, bukan grid dua kolom.');
+        $this->assertStringNotContainsString('Pilih Produk', $html, 'Container "Pilih Produk" harus dihapus.');
+        $this->assertStringContainsString('Keranjang', $html);
+
+        // Input produk & jumlah harus berada DI DALAM tabel keranjang,
+        // yaitu setelah baris "PRODUK" dan sebelum penutup tabel.
+        $posisiTabel = strpos($html, 'id="tabel-keranjang"');
+        $posisiInput = strpos($html, 'id="cari-produk"');
+        $posisiTutup = strpos($html, '</table>');
+
+        $this->assertNotFalse($posisiTabel);
+        $this->assertNotFalse($posisiInput);
+        $this->assertGreaterThan($posisiTabel, $posisiInput, 'Input produk harus di dalam tabel keranjang.');
+        $this->assertLessThan($posisiTutup, $posisiInput, 'Input produk harus di dalam tabel keranjang.');
+    }
+
+    public function test_semua_halaman_utama_pakai_wadah_lebar_tetap(): void
+    {
+        // Konten tiap menu dibungkus .lebar-tetap supaya lebarnya seragam:
+        // tidak melar mengikuti ukuran layar, tidak jadi kolom pendek.
+        $admin = User::factory()->admin()->create();
+
+        $halaman = [
+            'transaksi.index' => route('transaksi.index'),
+            'transaksi.riwayat' => route('transaksi.riwayat'),
+            'stok.index' => route('stok.index'),
+            'laporan.index' => route('laporan.index'),
+            'keuangan.tutup-buku' => route('keuangan.tutup-buku'),
+        ];
+
+        foreach ($halaman as $nama => $url) {
+            $html = $this->actingAs($admin)->get($url)->assertOk()->getContent();
+
+            $this->assertStringContainsString(
+                'class="lebar-tetap"',
+                $html,
+                "Halaman $nama harus memakai wadah .lebar-tetap."
+            );
+        }
+    }
+
+    public function test_menu_ponsel_tertutup_secara_default(): void
+    {
+        // Di layar kecil sidebar jadi menu slide-in. Kalau tidak disembunyikan
+        // secara default, ~70% isi halaman tertutup dan tidak bisa dibaca.
+        $admin = User::factory()->admin()->create();
+
+        $html = $this->actingAs($admin)->get(route('transaksi.index'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('id="menu-toggle"', $html);
+        $this->assertStringContainsString('id="tirai-sidebar"', $html);
+
+        // Tombol menu harus punya kontrol JS, bukan toggle kelas inline.
+        $this->assertStringNotContainsString(
+            "onclick=\"document.getElementById('sidebar').classList.toggle('tutup')\"",
+            $html,
+            'Tombol menu harus ditangani JavaScript, bukan atribut onclick inline.'
+        );
+    }
+
     public function test_daftar_produk_dikirim_sebagai_json_yang_valid(): void
     {
         Stok::create([

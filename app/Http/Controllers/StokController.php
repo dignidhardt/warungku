@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stok;
+use App\Models\StokMutasi;
 use App\Services\TransaksiService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,6 +14,14 @@ class StokController extends Controller
     public function index(Request $request)
     {
         $keyword = trim((string) $request->get('cari', ''));
+        $status = (string) $request->get('status', '');
+
+        // Parameter filter yang ikut dibawa ke link paginasi. Yang kosong
+        // sengaja dibuang supaya URL tidak penuh "cari=&status=".
+        $filter = array_filter([
+            'cari' => $keyword,
+            'status' => $status,
+        ]);
 
         $produk = Stok::query()
             ->when($keyword !== '', function ($query) use ($keyword) {
@@ -24,17 +33,27 @@ class StokController extends Controller
                         ->orWhere('kategori', 'like', "%{$keyword}%");
                 });
             })
-            ->when($request->get('status') === 'menipis', fn ($q) => $q->whereColumn('stok', '<=', 'stok_minimal')->where('stok', '>', 0))
-            ->when($request->get('status') === 'habis', fn ($q) => $q->where('stok', '<=', 0))
+            ->when($status === 'menipis', fn ($q) => $q->whereColumn('stok', '<=', 'stok_minimal')->where('stok', '>', 0))
+            ->when($status === 'habis', fn ($q) => $q->where('stok', '<=', 0))
             ->orderBy('stok')
             ->orderBy('nama_produk')
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(20, ['*'], 'pageProduk')
+            ->appends($filter);
+
+        // Riwayat stok: seluruh mutasi masuk dan keluar, terbaru lebih dulu.
+        // Paginasi dipisah dari daftar produk (pageProduk / pageMutasi)
+        // supaya menggulir riwayat tidak menggeser halaman daftar produk.
+        $mutasis = StokMutasi::query()
+            ->with(['produk', 'user'])
+            ->latest('id')
+            ->paginate(25, ['*'], 'pageMutasi')
+            ->appends($filter);
 
         return view('stok.index', [
             'produk' => $produk,
+            'mutasis' => $mutasis,
             'keyword' => $keyword,
-            'status' => $request->get('status'),
+            'status' => $status,
             'totalHabis' => Stok::where('stok', '<=', 0)->count(),
             'totalMenipis' => Stok::whereColumn('stok', '<=', 'stok_minimal')->where('stok', '>', 0)->count(),
         ]);

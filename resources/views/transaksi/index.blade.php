@@ -222,21 +222,24 @@
 @endsection
 
 @push('skrip')
+{{--
+    Daftar produk dikirim dari server sebagai JSON, bukan lewat <datalist>.
+    Alasannya: datalist bawaan browser tampil berbeda di tiap perangkat dan
+    di HP sering tidak bisa dipilih dengan rapi.
+
+    JSON-nya sudah disiapkan di controller (TransaksiController@index).
+
+    PENTING: jangan menulis `@json($produk->map(...))` di dalam view.
+    Blade mem-parse `=>` dan `[` sebagai directive-nya sendiri sehingga
+    halaman gagal dengan "Unclosed '['". Selain itu, Blade juga memproses
+    directive yang ditulis di dalam KOMENTAR di blok script — karena itu
+    catatan ini sengaja diletakkan di sini, di luar <script>.
+--}}
 <script>
 (function () {
     'use strict';
 
-    // Daftar produk dikirim dari server sebagai JSON, bukan lewat <datalist>.
-    // Alasannya: datalist bawaan browser tampil berbeda di tiap perangkat dan
-    // di HP sering tidak bisa dipilih dengan rapi.
-    const daftarProduk = @json($produk->map(fn ($p) => [
-        'id' => $p->id,
-        'nama' => $p->nama_produk,
-        'barcode' => $p->barcode,
-        'harga' => (int) $p->harga_jual,
-        'stok' => (int) $p->stok,
-        'satuan' => $p->satuan,
-    ]));
+    const daftarProduk = @json($daftarProduk);
 
     let keranjang = [];
 

@@ -5,11 +5,12 @@
 SHELL := /bin/bash
 
 APP_DEV  := warungku-dev-app
+APP_DEV_MYSQL := warungku-dev-mysql
 APP_LIVE := warungku-live-app
 URL_DEV  := http://127.0.0.1:8010
 URL_LIVE := http://127.0.0.1:8011
 
-.PHONY: help up down restart logs sh ps fresh seed test queue migrate status open db backup live-up live-down live-logs live-sh live-migrate live-build live-env clean restore backup-auto backup-list
+.PHONY: help up down restart logs sh ps fresh seed test queue migrate status open db backup live-up live-down live-logs live-sh live-migrate live-build live-env clean restore backup-auto backup-list bersih
 
 help: ## Tampilkan daftar perintah
 	@echo "Warungku — perintah yang tersedia:"
@@ -55,6 +56,11 @@ migrate: ## Jalankan migrasi yang belum jalan (dev)
 fresh: ## HAPUS data dev lalu migrate + seed ulang (butuh konfirmasi)
 	@read -p "Semua data DEV akan dihapus. Lanjut? [y/N] " ok; [ "$$ok" = "y" ] || exit 1
 	docker exec $(APP_DEV) php artisan migrate:fresh --seed --force
+
+bersih: ## KOSONGKAN data operasional (akun tetap ada) — untuk uji alur dari nol
+	@MYSQL_CONTAINER=$(APP_DEV_MYSQL) sh scripts/bersihkan-data.sh
+	@echo "Akun admin & kasir tetap ada. Data contoh produk juga hilang."
+	@echo "Butuh data contoh lagi? Jalankan: make seed"
 
 seed: ## Isi data contoh (dev)
 	docker exec $(APP_DEV) php artisan db:seed --force

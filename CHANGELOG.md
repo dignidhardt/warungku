@@ -24,6 +24,8 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
   lagi bergantung pada `datalist` bawaan browser.
 - **Backup otomatis terjadwal** lewat cron container.
 - Halaman **Buku Kas** untuk melihat seluruh arus uang masuk dan keluar.
+- Perintah `make bersih` untuk mengosongkan data operasional (akun tetap ada)
+  supaya alur bisa diuji dari nol tanpa menunggu `migrate:fresh`.
 - **CHANGELOG.md** ini.
 
 ### Diubah
@@ -42,6 +44,13 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Diperbaiki
 
+- Halaman **Kasir 500** karena directive Blade salah sintaks. Daftar produk
+  dirakit langsung di view dengan `@json($produk->map(fn ($p) => [...]))`;
+  Blade mengurai `=>` dan `[` sebagai directive-nya sendiri sehingga hasilnya
+  "Unclosed '[' on line 230". Sekarang logikanya dipindah ke controller dan
+  view hanya menerima variabel jadi.
+- Blade juga mem-proses directive yang hanya **tertulis di dalam komentar**
+  pada blok `<script>`. Catatan penjelasan dipindahkan ke luar blok script.
 - Nomor nota memakai komponen acak sehingga dua transaksi pada detik yang sama
   tidak lagi gagal karena unique index.
 - Penyimpanan transaksi dibungkus database transaction dengan penguncian baris,

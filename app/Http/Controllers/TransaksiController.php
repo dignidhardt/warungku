@@ -21,6 +21,25 @@ class TransaksiController extends Controller
                 ->orderBy('nama_produk')
                 ->get(['id', 'barcode', 'nama_produk', 'satuan', 'harga_jual', 'stok', 'satuan_kemasan', 'isi_kemasan']),
             'metode' => Transaksi::daftarMetode(),
+            // Daftar produk dikirim ke JavaScript sebagai JSON.
+            //
+            // PENTING: rentai ini TIDAK boleh dibangun di dalam view dengan
+            // `@json($produk->map(fn ($p) => [...]))`. Blade mem-parse `=>`
+            // dan `[` sebagai directive-nya sendiri, sehingga hasil akhirnya
+            // "Unclosed '[' on line 230" — halaman 500. Semua logika PHP
+            // diletakkan di sini, view hanya menerima variabel jadi.
+            'daftarProduk' => Stok::where('stok', '>', 0)
+                ->orderBy('nama_produk')
+                ->get(['id', 'barcode', 'nama_produk', 'satuan', 'harga_jual', 'stok'])
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'nama' => $p->nama_produk,
+                    'barcode' => $p->barcode,
+                    'harga' => (int) $p->harga_jual,
+                    'stok' => (int) $p->stok,
+                    'satuan' => $p->satuan,
+                ])
+                ->values(),
         ]);
     }
 

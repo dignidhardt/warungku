@@ -27,7 +27,29 @@ Tunggu 1–2 menit (pertama kali: build image + migrasi + seed otomatis). Lalu b
 - **Aplikasi:** http://127.0.0.1:8010
 - **MySQL (kalau perlu):** `127.0.0.1:3309` — db `warungku_dev`, user `warungku` / `secret` (root: `rootsecret`)
 
-## 3. Perintah harian
+### B. Tanpa Docker (Linux) — script host
+
+`./setup-host-linux.sh` (butuh sudo): pasang PHP 8.x + ekstensi + MariaDB + Composer, buat database `warungku_host` (user `warungku`/`secret`), migrate + seed, lalu `php artisan serve` di **http://127.0.0.1:8010**. Cocok untuk Debian/Ubuntu & turunannya.
+
+### C. Tanpa Docker (Windows) — Laragon
+
+Windows tidak punya script otomatis (instalasi PHP+MySQL native di Windows ribet diotomasi). Jalur praktisnya **Laragon**:
+
+1. Download Laragon Full: https://laragon.org/download
+2. Install → Laragon otomatis menyediakan PHP 8.x + MySQL + Composer.
+3. Klik **Start All**, lalu taruh folder project ini di `C:\laragon\www\warungku`.
+4. Buka **Terminal** Laragon di folder itu, jalankan:
+   ```
+   composer install
+   copy .env.example .env   (lalu isi DB_DATABASE=warungku, DB_USERNAME=root, DB_PASSWORD kosong)
+   php artisan key:generate
+   php artisan migrate --seed
+   ```
+5. Laragon → klik nama project `warungku` → browser terbuka.
+
+## 3. Perintah harian (jalur Docker)
+
+> Jalur host (B/C): matikan cukup Ctrl+C di terminal `artisan serve`; perintah di bawah ganti `docker compose exec app php artisan ...` → `php artisan ...`.
 
 ```bash
 docker compose up -d        # nyalakan

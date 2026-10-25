@@ -9,10 +9,16 @@ Untuk teman satu tim. Aplikasi Laravel + Docker, jalan di laptop masing-masing t
 
 > 7-Zip: Windows → pakai aplikasi 7-Zip (7-zip.org); Linux → `7z x warungku-share.7z` (paket `p7zip-full`); macOS → `brew install sevenzip`.
 
-## 2. Jalankan
+## 2. Jalankan — cara gampang: double-klik
+
+- **Windows:** double-klik `setup-windows.bat`
+- **Linux/macOS:** jalankan `./setup-linux.sh` (atau double-klik di file manager yang support "Run")
+
+Script-nya otomatis: cek Docker → nyalakan stack → tunggu siap → buka browser di http://127.0.0.1:8010. Kalau Docker belum terpasang, script menunjukkan link installer lalu berhenti — pasang dulu, jalankan lagi.
+
+**Cara manual** (kalau mau):
 
 ```bash
-cd ~/Documents/warungku
 docker compose up -d
 ```
 

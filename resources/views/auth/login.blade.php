@@ -11,7 +11,7 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #0d6efd 0%, #0b3f8f 100%);
+            background: linear-gradient(135deg, #0D9D8D 0%, #0B7E72 100%);
             padding: 20px;
         }
         .kotak-login {

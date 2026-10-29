@@ -6,12 +6,12 @@
             </th>
         </tr>
         <tr>
-            <th style="background: #eef2f7; font-weight: bold;">No</th>
-            <th style="background: #eef2f7; font-weight: bold;">Nomor Nota</th>
-            <th style="background: #eef2f7; font-weight: bold;">Tanggal</th>
-            <th style="background: #eef2f7; font-weight: bold;">Kasir</th>
-            <th style="background: #eef2f7; font-weight: bold;">Item</th>
-            <th style="background: #eef2f7; font-weight: bold;">Total</th>
+            <th style="background: #E6F6F3; font-weight: bold;">No</th>
+            <th style="background: #E6F6F3; font-weight: bold;">Nomor Nota</th>
+            <th style="background: #E6F6F3; font-weight: bold;">Tanggal</th>
+            <th style="background: #E6F6F3; font-weight: bold;">Kasir</th>
+            <th style="background: #E6F6F3; font-weight: bold;">Item</th>
+            <th style="background: #E6F6F3; font-weight: bold;">Total</th>
         </tr>
     </thead>
     <tbody>

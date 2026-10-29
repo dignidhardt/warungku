@@ -1,16 +1,29 @@
+/* Tema Warungku — sederhana: hitam, putih, toska (palet Invoizy).
+   Aksen utama #0D9D8D, gelap #0B7E72, latar #F7FAF9, tint #E6F6F3.
+   Merah hanya untuk hal fungsional (error / tombol hapus). */
+
 :root {
-    --biru: #0d6efd;
-    --biru-gelap: #0b5ed7;
-    --hijau: #198754;
-    --merah: #dc3545;
-    --kuning: #ffc107;
-    --gelap: #1e293b;
+    /* Aksen toska */
+    --toska: #0D9D8D;
+    --toska-gelap: #0B7E72;
+    --tint: #E6F6F3;
+
+    /* Netral */
+    --teks: #111827;
     --abu: #64748b;
-    --garis: #e2e8f0;
-    --latar: #f4f6f9;
+    --garis: #E2E8F0;
+    --latar: #F7FAF9;
     --putih: #ffffff;
-    --radius: 10px;
-    --bayang: 0 2px 8px rgba(0, 0, 0, .06);
+
+    /* Fungsional: merah hanya untuk error/hapus.
+       --hijau diarahkan ke toska gelap: dipakai status sukses dan oleh
+       skrip kasir untuk warna kembalian. */
+    --merah: #dc3545;
+    --hijau: var(--toska-gelap);
+
+    --radius: 16px;
+    --radius-tombol: 12px;
+    --bayang: 0 1px 2px rgba(0, 0, 0, .04);
 }
 
 * {
@@ -22,14 +35,21 @@
 
 body {
     background: var(--latar);
-    color: #1f2937;
+    color: var(--teks);
     font-size: 14px;
 }
+
+a {
+    color: var(--toska-gelap);
+    text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
 
 /* ---------- Navigasi atas ---------- */
 .navbar {
     height: 60px;
-    background: var(--biru);
+    background: var(--toska);
     color: #fff;
     display: flex;
     align-items: center;
@@ -59,6 +79,13 @@ body {
     text-decoration: none;
 }
 
+/* Lencana peran di navbar putih tembus pandang supaya tetap terbaca
+   di atas latar toska. */
+.navbar .lencana {
+    background: rgba(255, 255, 255, .2);
+    color: #fff;
+}
+
 .menu-toggle {
     font-size: 24px;
     cursor: pointer;
@@ -71,7 +98,7 @@ body {
 }
 
 .menu-toggle:hover {
-    background: rgba(255, 255, 255, .15);
+    background: rgba(255, 255, 255, .18);
 }
 
 /* ---------- Kerangka ---------- */
@@ -80,10 +107,12 @@ body {
     min-height: calc(100vh - 60px);
 }
 
+/* Sidebar putih, item aktif tint toska — setara indikator NavigationBar. */
 .sidebar {
     width: 210px;
     flex-shrink: 0;
-    background: var(--gelap);
+    background: var(--putih);
+    border-right: 1px solid var(--garis);
     padding: 14px 0;
     transition: width .25s ease, padding .25s ease;
     overflow: hidden;
@@ -92,12 +121,13 @@ body {
 .sidebar.tutup {
     width: 0;
     padding: 0;
+    border-right: 0;
 }
 
 .sidebar a {
     display: block;
-    padding: 13px 20px;
-    color: #e2e8f0;
+    padding: 12px 20px;
+    color: #334155;
     text-decoration: none;
     font-size: 14px;
     border-left: 3px solid transparent;
@@ -105,19 +135,19 @@ body {
 }
 
 .sidebar a:hover {
-    background: #334155;
+    background: var(--latar);
 }
 
 .sidebar a.aktif {
-    background: #334155;
-    border-left-color: var(--biru);
-    color: #fff;
+    background: var(--tint);
+    border-left-color: var(--toska);
+    color: var(--toska-gelap);
     font-weight: 600;
 }
 
 .sidebar .pemisah {
     height: 1px;
-    background: #334155;
+    background: var(--garis);
     margin: 8px 14px;
 }
 
@@ -126,7 +156,7 @@ body {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: .08em;
-    color: #94a3b8;
+    color: var(--abu);
     white-space: nowrap;
 }
 
@@ -137,18 +167,18 @@ body {
 .sidebar button.keluar {
     width: 100%;
     text-align: left;
-    padding: 13px 20px;
+    padding: 12px 20px;
     background: none;
     border: 0;
     border-left: 3px solid transparent;
-    color: #fca5a5;
+    color: #b91c1c;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
 }
 
 .sidebar button.keluar:hover {
-    background: #334155;
+    background: #fef2f2;
 }
 
 .isi {
@@ -169,8 +199,10 @@ body {
 }
 
 /* ---------- Komponen ---------- */
+/* Kartu flat dengan garis abu + bayang sangat lembut. */
 .kartu {
     background: var(--putih);
+    border: 1px solid var(--garis);
     border-radius: var(--radius);
     box-shadow: var(--bayang);
     padding: 22px;
@@ -180,7 +212,7 @@ body {
 .kartu > h2,
 .kartu > h3 {
     font-size: 16px;
-    color: #1e293b;
+    color: var(--teks);
     margin-bottom: 16px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--garis);
@@ -197,7 +229,7 @@ body {
 
 .judul-halaman h2 {
     font-size: 20px;
-    color: #0f172a;
+    color: var(--teks);
 }
 
 .judul-halaman p {
@@ -206,7 +238,7 @@ body {
     margin-top: 3px;
 }
 
-/* Kartu statistik */
+/* Kartu statistik: flat tanpa blok warna per kartu; angka toska. */
 .baris-statistik {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -216,21 +248,17 @@ body {
 
 .statistik {
     background: var(--putih);
+    border: 1px solid var(--garis);
     border-radius: var(--radius);
     box-shadow: var(--bayang);
     padding: 18px 20px;
-    border-left: 5px solid var(--biru);
 }
 
-.statistik.hijau { border-left-color: var(--hijau); }
-.statistik.kuning { border-left-color: var(--kuning); }
-.statistik.merah { border-left-color: var(--merah); }
-
 /* Kartu statistik yang diletakkan DI DALAM container lain: bayangannya
-   sendiri tidak perlu karena sudah ada bayangan container luarnya. Tanpa
-   ini cards-nya putih di atas putih dan terlihat seperti tidak ada. */
+   sendiri tidak perlu karena sudah ada container luarnya. Tanpa ini
+   cards-nya putih di atas putih dan terlihat seperti tidak ada. */
 .kartu .statistik {
-    background: #f8fafc;
+    background: var(--latar);
     box-shadow: none;
 }
 
@@ -245,7 +273,7 @@ body {
 .statistik .nilai {
     font-size: 26px;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--toska-gelap);
     margin-top: 6px;
 }
 
@@ -255,7 +283,7 @@ body {
     color: var(--abu);
 }
 
-/* Tombol */
+/* Tombol: utama toska radius 12, sekunder outline abu, hapus merah. */
 .tombol {
     display: inline-flex;
     align-items: center;
@@ -263,9 +291,9 @@ body {
     gap: 6px;
     height: 40px;
     padding: 0 18px;
-    border: 0;
-    border-radius: 7px;
-    background: var(--biru);
+    border: 1px solid transparent;
+    border-radius: var(--radius-tombol);
+    background: var(--toska);
     color: #fff;
     font-size: 14px;
     font-weight: 600;
@@ -274,22 +302,38 @@ body {
     transition: background .15s;
 }
 
-.tombol:hover { background: var(--biru-gelap); }
+.tombol:hover { background: var(--toska-gelap); text-decoration: none; }
 
-.tombol.hijau { background: var(--hijau); }
-.tombol.hijau:hover { background: #146c43; }
+/* Tombol aksi utama lain (class hijau di view) ikut aksen toska. */
+.tombol.hijau { background: var(--toska); }
+.tombol.hijau:hover { background: var(--toska-gelap); }
 
+/* Tombol hapus / pembatalan tetap merah (fungsional). */
 .tombol.merah { background: var(--merah); }
 .tombol.merah:hover { background: #bb2d3b; }
 
-.tombol.abu { background: #6c757d; }
-.tombol.abu:hover { background: #5c636a; }
+/* Tombol sekunder: outline abu, latar putih. */
+.tombol.abu {
+    background: var(--putih);
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.tombol.abu:hover {
+    background: var(--latar);
+    border-color: #94a3b8;
+}
+
+.tombol:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
 
 .tombol.kecil {
     height: 30px;
     padding: 0 12px;
     font-size: 12px;
-    border-radius: 5px;
+    border-radius: 10px;
 }
 
 .tombol.blok { width: 100%; }
@@ -318,10 +362,10 @@ body {
     height: 42px;
     padding: 0 12px;
     border: 1px solid #cbd5e1;
-    border-radius: 7px;
+    border-radius: 10px;
     font-size: 14px;
     background: #fff;
-    color: #1f2937;
+    color: var(--teks);
 }
 
 .bidang textarea {
@@ -333,8 +377,8 @@ body {
 .bidang input:focus,
 .bidang select:focus,
 .bidang textarea:focus {
-    outline: 2px solid rgba(13, 110, 253, .25);
-    border-color: var(--biru);
+    outline: 2px solid rgba(13, 157, 141, .25);
+    border-color: var(--toska);
 }
 
 .bidang .bantuan {
@@ -396,7 +440,11 @@ table.tabel tfoot td {
     color: var(--abu);
 }
 
-/* Label status */
+/* Label status.
+   - .hijau (peran gudang & status sukses)  = toska gelap pekat.
+   - .biru (peran admin & kode master data) = toska.
+   - .kuning (menipis / penyesuaian / prive) = abu netral.
+   - .merah tetap untuk habis / batal (fungsional). */
 .lencana {
     display: inline-block;
     padding: 3px 10px;
@@ -407,25 +455,25 @@ table.tabel tfoot td {
     letter-spacing: .03em;
 }
 
-.lencana.hijau { background: #d1e7dd; color: #0f5132; }
-.lencana.kuning { background: #fff3cd; color: #7a5b00; }
+.lencana.hijau { background: var(--toska-gelap); color: #fff; }
+.lencana.biru { background: var(--toska); color: #fff; }
+.lencana.kuning { background: #f1f5f9; color: #475569; }
 .lencana.merah { background: #f8d7da; color: #842029; }
-.lencana.biru { background: #cfe2ff; color: #084298; }
 .lencana.abu { background: #e9ecef; color: #495057; }
 
-/* Pesan */
+/* Pesan: sukses & info memakai tint toska; galat tetap merah. */
 .pesan {
     padding: 13px 16px;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 18px;
     font-size: 14px;
     font-weight: 500;
     border-left: 4px solid;
 }
 
-.pesan.sukses { background: #d1e7dd; border-color: var(--hijau); color: #0f5132; }
+.pesan.sukses { background: var(--tint); border-color: var(--toska); color: var(--toska-gelap); }
 .pesan.galat { background: #f8d7da; border-color: var(--merah); color: #842029; }
-.pesan.info { background: #cfe2ff; border-color: var(--biru); color: #084298; }
+.pesan.info { background: var(--tint); border-color: var(--toska); color: var(--toska-gelap); }
 
 /* Filter bar */
 .baris-filter {
@@ -461,15 +509,15 @@ table.tabel tfoot td {
     height: 34px;
     padding: 0 10px;
     border: 1px solid var(--garis);
-    border-radius: 6px;
+    border-radius: 8px;
     background: #fff;
     color: #334155;
     text-decoration: none;
     font-size: 13px;
 }
 
-.paginasi a:hover { background: #f1f5f9; }
-.paginasi .aktif { background: var(--biru); border-color: var(--biru); color: #fff; font-weight: 700; }
+.paginasi a:hover { background: var(--latar); text-decoration: none; }
+.paginasi .aktif { background: var(--toska); border-color: var(--toska); color: #fff; font-weight: 700; }
 .paginasi .mati { color: #cbd5e1; }
 
 /* Utilitas */
@@ -503,15 +551,22 @@ table.tabel tfoot td {
     gap: 10px;
 }
 
+.judul-panel .tautan {
+    font-size: 13px;
+    color: var(--toska-gelap);
+    font-weight: 600;
+}
+
 /* Tabel laporan laba rugi: tanpa garis vertikal, angka rata kanan. */
 .tabel-laporan td { border-bottom: 1px solid var(--garis); }
 .tabel-laporan tr:last-child td { border-bottom: none; }
 .tabel-laporan .indent { padding-left: 28px; color: var(--abu); }
 .tabel-laporan .angka { text-align: right; white-space: nowrap; }
 
-/* Baris total ditebalkan; warnanya mengikuti kelas hijau/merah. */
+/* Baris total ditebalkan; warnanya fungsional: laba = toska gelap,
+   rugi / potongan = merah. */
 .tabel-laporan tr.tebal td { font-weight: 700; background: #f8fafc; }
-.tabel-laporan tr.hijau td { color: #15803d; }
+.tabel-laporan tr.hijau td { color: var(--toska-gelap); }
 .tabel-laporan tr.merah td { color: #b91c1c; }
 
 .daftar-catatan {
@@ -523,9 +578,10 @@ table.tabel tfoot td {
 }
 .daftar-catatan li { margin-bottom: 8px; }
 
-/* Kotak selisih kas: warna menyesuaikan arah selisih. */
-.selisih-pas { color: #15803d; font-weight: 700; }
-.selisih-lebih { color: #b45309; font-weight: 700; }
+/* Kotak selisih kas: arah selisih hanya lewat warna fungsional.
+   Kas pas/lebih = toska gelap; kas kurang = merah. */
+.selisih-pas { color: var(--toska-gelap); font-weight: 700; }
+.selisih-lebih { color: var(--toska-gelap); font-weight: 700; }
 .selisih-kurang { color: #b91c1c; font-weight: 700; }
 
 /* Baris barang yang bisa diretur / dibeli. */
@@ -574,7 +630,7 @@ table.tabel tfoot td {
 /* Baris judul tidak boleh ikut terpotong border bawah baris barang. */
 .baris-verbal:not(.baris-verbal-pertama) { border-bottom: 0; padding-top: 6px; }
 
-/* Cetak: sembunyikan elemen navigasi */
+/* Cetak: sembunyikan elemen navigasi; hasil cetak monokrom. */
 @media print {
     .navbar,
     .sidebar,
@@ -587,6 +643,10 @@ table.tabel tfoot td {
     .kartu { box-shadow: none; border: 1px solid #ddd; }
 }
 
+/* ---------- HP sekunder (Fase 3, hanya restyle CSS) ----------
+   - Sidebar jadi slide-in tetap ada; di-restyle putih + tint toska.
+   - Tabel sempit memakai scroll horizontal (.tabel-bungkus sudah
+     overflow-x: auto di atas). */
 @media (max-width: 720px) {
     .isi { padding: 14px; }
     .sidebar {
@@ -594,7 +654,7 @@ table.tabel tfoot td {
         top: 60px;
         bottom: 0;
         z-index: 15;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, .2);
+        box-shadow: 2px 0 12px rgba(0, 0, 0, .08);
     }
     .sidebar.tutup { width: 0; }
 
@@ -607,7 +667,7 @@ table.tabel tfoot td {
     .tirai-sidebar {
         position: fixed;
         inset: 60px 0 0 0;
-        background: rgba(15, 23, 42, .45);
+        background: rgba(15, 23, 42, .4);
         z-index: 14;
     }
     .tirai-sidebar[hidden] { display: none; }

@@ -56,6 +56,12 @@ dan proyek ini memakai [Semantic Versioning](https://semver.org/lang/id/).
 
 ### Diubah
 
+- **Tema UI direstyle lengkap**: palet minim hitam, putih, dan toska
+  (`#0D9D8D`) mengikuti tema aplikasi Invoizy. Navbar toska, sidebar putih
+  dengan item aktif tint, kartu radius 16px dengan bayang sangat lembut,
+  tombol utama toska radius 12px. Warna biru dan kuning dihapus; merah
+  hanya untuk pesan error dan tombol hapus. Fungsionalitas tidak berubah
+  — hanya `warungku.css` dan warna inline di beberapa view.
 - **Format rupiah seragam di seluruh aplikasi**: "Rp 100.000,00" (dengan
   desimal, dua angka di belakang koma). Sebelumnya formatnya campuran —
   sebagian "Rp 100.000", sebagian "Rp 100.000,00". Semua tampilan kini

@@ -34,7 +34,7 @@
             vertical-align: top;
         }
         table.data th {
-            background: #eef2f7;
+            background: #E6F6F3;
             font-size: 9.5px;
             text-transform: uppercase;
         }

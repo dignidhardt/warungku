@@ -5,9 +5,9 @@
 @push('gaya')
 <style>
     .papan-total {
-        background: #0f172a;
-        color: #6ee7b7;
-        border-radius: 10px;
+        background: var(--toska-gelap);
+        color: #fff;
+        border-radius: 16px;
         padding: 18px 20px;
         text-align: right;
         margin-bottom: 16px;
@@ -16,7 +16,7 @@
         display: block;
         font-size: 11px;
         letter-spacing: .1em;
-        color: #94a3b8;
+        color: rgba(255, 255, 255, .75);
         text-transform: uppercase;
         margin-bottom: 4px;
     }
